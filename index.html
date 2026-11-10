@@ -3,17 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบคำนวณเงินเดือนและ OT ละเอียด</title>
+    <title>ระบบคำนวณเงินเดือนและ OT</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>body { font-family: 'Sarabun', sans-serif; }</style>
 </head>
 <body class="bg-slate-100 min-h-screen py-8 px-4">
-    <div class="max-w-5xl mx-auto space-y-6">
+    <div class="max-w-4xl mx-auto space-y-6">
         <div class="bg-white rounded-2xl shadow-xl p-6 md:p-8">
-            <h1 class="text-2xl font-bold text-slate-800 mb-2">💰 ระบบคำนวณเงินเดือนและค่าล่วงเวลา (OT แบบละเอียด)</h1>
-            <p class="text-slate-500 text-sm mb-6">ฐานการคำนวณ: (เงินเดือน / 30 / 8) × ชั่วโมง OT × เรท (1.5, 2.0, 3.0)</p>
+            <h1 class="text-2xl font-bold text-slate-800 mb-2">💰 ระบบคำนวณเงินเดือนและค่าล่วงเวลา (OT)</h1>
+            <p class="text-slate-500 text-sm mb-6">ฐานการคำนวณ: (เงินเดือน / 30 / 8) × OT × จำนวนชั่วโมง</p>
             
             <!-- Tab Switching -->
             <div class="flex border-b border-slate-200 mb-6">
@@ -40,195 +40,21 @@
                         <input type="number" id="s-base" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="เช่น 15000 หรือ 500">
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-1">จำนวนชั่วโมง OT แยกตามเรท</label>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">เรท OT ที่ทำ (ชั่วโมง)</label>
                         <div class="grid grid-cols-3 gap-2">
-                            <div><span class="text-xs text-slate-500">OT 1.5 (วันปกติ)</span><input type="number" id="s-ot15" value="0" class="w-full px-2 py-2 border rounded-lg"></div>
-                            <div><span class="text-xs text-slate-500">OT 2.0 (วันหยุด)</span><input type="number" id="s-ot2" value="0" class="w-full px-2 py-2 border rounded-lg"></div>
-                            <div><span class="text-xs text-slate-500">OT 3.0 (ล่วงเวลาวันหยุด)</span><input type="number" id="s-ot3" value="0" class="w-full px-2 py-2 border rounded-lg"></div>
+                            <div><span class="text-xs text-slate-500">OT 1.5</span><input type="number" id="s-ot15" value="0" class="w-full px-2 py-2 border rounded-lg"></div>
+                            <div><span class="text-xs text-slate-500">OT 2.0</span><input type="number" id="s-ot2" value="0" class="w-full px-2 py-2 border rounded-lg"></div>
+                            <div><span class="text-xs text-slate-500">OT 3.0</span><input type="number" id="s-ot3" value="0" class="w-full px-2 py-2 border rounded-lg"></div>
                         </div>
                     </div>
                 </div>
                 <button onclick="calculateSingle()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 rounded-lg transition">คำนวณเงินค่าจ้าง</button>
                 
                 <div id="s-result" class="hidden mt-4 p-4 bg-blue-50 rounded-xl border border-blue-100">
-                    <h3 class="font-bold text-blue-900 mb-2">ผลการคำนวณแบบละเอียด</h3>
+                    <h3 class="font-bold text-blue-900 mb-2">ผลการคำนวณ</h3>
                     <div id="s-result-text" class="text-sm text-blue-800 space-y-1"></div>
                 </div>
             </div>
 
             <!-- Bulk Excel Calculation -->
-            <div id="tab-bulk" class="hidden space-y-4">
-                <div class="border-2 border-dashed border-slate-300 rounded-xl p-6 text-center hover:border-blue-500 transition cursor-pointer" onclick="document.getElementById('excel-file').click()">
-                    <p class="text-slate-600 mb-1">คลิกเพื่ออัปโหลดไฟล์ Excel หรือลากไฟล์มาวางที่นี่</p>
-                    <p class="text-xs text-slate-400">รองรับไฟล์ .xlsx หรือ .xls (มีคอลัมน์: ชื่อพนักงาน, ประเภท, ฐานเงินเดือน, OT 1.5 (ชม.), OT 2.0 (ชม.), OT 3.0 (ชม.))</p>
-                    <input type="file" id="excel-file" accept=".xlsx, .xls" class="hidden" onchange="handleExcelUpload(event)">
-                </div>
-                <div class="flex justify-between items-center">
-                    <button onclick="downloadTemplate()" class="text-sm text-blue-600 hover:underline">📥 ดาวน์โหลดเทมเพลต Excel ตัวอย่าง (แบบละเอียด)</button>
-                </div>
-
-                <div id="bulk-result-section" class="hidden space-y-4">
-                    <div class="overflow-x-auto border rounded-xl">
-                        <table id="bulk-table" class="w-full text-left border-collapse text-sm">
-                            <thead class="bg-slate-50 border-b">
-                                <tr>
-                                    <th class="p-3">ชื่อพนักงาน</th>
-                                    <th class="p-3">ประเภท</th>
-                                    <th class="p-3">ฐานเงินเดือน</th>
-                                    <th class="p-3">OT 1.5 (บาท)</th>
-                                    <th class="p-3">OT 2.0 (บาท)</th>
-                                    <th class="p-3">OT 3.0 (บาท)</th>
-                                    <th class="p-3">รวม OT</th>
-                                    <th class="p-3 font-bold text-blue-600">ยอดรวมสุทธิ</th>
-                                </tr>
-                            </thead>
-                            <tbody id="bulk-tbody"></tbody>
-                        </table>
-                    </div>
-                    <button onclick="exportResult()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2.5 rounded-lg transition">📥 ดาวน์โหลดสรุปผลลัพธ์เป็น Excel (แบบละเอียด)</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        let bulkDataResult = [];
-
-        function switchTab(tab) {
-            if (tab === 'single') {
-                document.getElementById('tab-single').classList.remove('hidden');
-                document.getElementById('tab-bulk').classList.add('hidden');
-                document.getElementById('btn-single').className = "pb-3 px-4 font-semibold text-blue-600 border-b-2 border-blue-600 focus:outline-none";
-                document.getElementById('btn-bulk').className = "pb-3 px-4 font-medium text-slate-500 hover:text-slate-700 focus:outline-none";
-            } else {
-                document.getElementById('tab-single').classList.add('hidden');
-                document.getElementById('tab-bulk').classList.remove('hidden');
-                document.getElementById('btn-bulk').className = "pb-3 px-4 font-semibold text-blue-600 border-b-2 border-blue-600 focus:outline-none";
-                document.getElementById('btn-single').className = "pb-3 px-4 font-medium text-slate-500 hover:text-slate-700 focus:outline-none";
-            }
-        }
-
-        function computePay(type, base, ot15, ot2, ot3) {
-            let hourlyRate = base / 30 / 8;
-            let pay15 = hourlyRate * ot15 * 1.5;
-            let pay2 = hourlyRate * ot2 * 2.0;
-            let pay3 = hourlyRate * ot3 * 3.0;
-            let otPayTotal = pay15 + pay2 + pay3;
-            let total = base + otPayTotal;
-            return { hourlyRate, pay15, pay2, pay3, otPayTotal, total };
-        }
-
-        function calculateSingle() {
-            let name = document.getElementById('s-name').value || 'พนักงานทั่วไป';
-            let type = document.getElementById('s-type').value;
-            let base = parseFloat(document.getElementById('s-base').value) || 0;
-            let ot15 = parseFloat(document.getElementById('s-ot15').value) || 0;
-            let ot2 = parseFloat(document.getElementById('s-ot2').value) || 0;
-            let ot3 = parseFloat(document.getElementById('s-ot3').value) || 0;
-
-            let res = computePay(type, base, ot15, ot2, ot3);
-
-            let html = `
-                <div><b>พนักงาน:</b> ${name} (${type === 'monthly' ? 'เงินเดือน' : 'รายวัน'})</div>
-                <div><b>อัตราค่าจ้างต่อชั่วโมง:</b> ${res.hourlyRate.toFixed(2)} บาท/ชม.</div>
-                <div class="mt-2 pt-2 border-t border-blue-200">
-                    <div>• ค่า OT 1.5 (${ot15} ชม.): <b>${res.pay15.toFixed(2)}</b> บาท</div>
-                    <div>• ค่า OT 2.0 (${ot2} ชม.): <b>${res.pay2.toFixed(2)}</b> บาท</div>
-                    <div>• ค่า OT 3.0 (${ot3} ชม.): <b>${res.pay3.toFixed(2)}</b> บาท</div>
-                    <div>• รวมเงิน OT ทั้งหมด: <b>${res.otPayTotal.toFixed(2)}</b> บาท</div>
-                </div>
-                <div class="text-base font-bold text-blue-900 mt-2 pt-2 border-t border-blue-200">ยอดรวมสุทธิ: ${res.total.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})} บาท</div>
-            `;
-            document.getElementById('s-result-text').innerHTML = html;
-            document.getElementById('s-result').classList.remove('hidden');
-        }
-
-        function downloadTemplate() {
-            let wsData = [
-                ["ชื่อพนักงาน", "ประเภท (monthly/daily)", "ฐานเงินเดือน", "OT 1.5 (ชม.)", "OT 2.0 (ชม.)", "OT 3.0 (ชม.)"],
-                ["สมชาย ใจดี", "monthly", 15000, 10, 5, 2],
-                ["สมหญิง รักงาน", "daily", 500, 8, 2, 0]
-            ];
-            let wb = XLSX.utils.book_new();
-            let ws = XLSX.utils.aoa_to_sheet(wsData);
-            XLSX.utils.book_append_sheet(wb, ws, "Template");
-            XLSX.writeFile(wb, "Payroll_Detailed_Template.xlsx");
-        }
-
-        function handleExcelUpload(event) {
-            let file = event.target.files[0];
-            if (!file) return;
-            let reader = new FileReader();
-            reader.onload = function(e) {
-                let data = new Uint8Array(e.target.result);
-                let workbook = XLSX.read(data, {type: 'array'});
-                let firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-                let rows = XLSX.utils.sheet_to_json(firstSheet);
-
-                bulkDataResult = rows.map(r => {
-                    let name = r["ชื่อพนักงาน"] || "ไม่ระบุ";
-                    let type = r["ประเภท (monthly/daily)"] || "monthly";
-                    let base = parseFloat(r["ฐานเงินเดือน"]) || 0;
-                    let ot15 = parseFloat(r["OT 1.5 (ชม.)"]) || 0;
-                    let ot2 = parseFloat(r["OT 2.0 (ชม.)"]) || 0;
-                    let ot3 = parseFloat(r["OT 3.0 (ชม.)"]) || 0;
-
-                    let calc = computePay(type, base, ot15, ot2, ot3);
-                    return { 
-                        name, type, base, 
-                        ot15Hrs: ot15, pay15: calc.pay15, 
-                        ot2Hrs: ot2, pay2: calc.pay2, 
-                        ot3Hrs: ot3, pay3: calc.pay3, 
-                        otPayTotal: calc.otPayTotal, 
-                        total: calc.total 
-                    };
-                });
-
-                renderBulkTable();
-            };
-            reader.readAsArrayBuffer(file);
-        }
-
-        function renderBulkTable() {
-            let tbody = document.getElementById('bulk-tbody');
-            tbody.innerHTML = '';
-            bulkDataResult.forEach(row => {
-                let tr = document.createElement('tr');
-                tr.className = "border-b hover:bg-slate-50";
-                tr.innerHTML = `
-                    <td class="p-3 font-medium">${row.name}</td>
-                    <td class="p-3">${row.type === 'monthly' ? 'เงินเดือน' : 'รายวัน'}</td>
-                    <td class="p-3">${row.base.toLocaleString()}</td>
-                    <td class="p-3">${row.pay15.toFixed(2)} <span class="text-xs text-slate-400">(${row.ot15Hrs}ชม.)</span></td>
-                    <td class="p-3">${row.pay2.toFixed(2)} <span class="text-xs text-slate-400">(${row.ot2Hrs}ชม.)</span></td>
-                    <td class="p-3">${row.pay3.toFixed(2)} <span class="text-xs text-slate-400">(${row.ot3Hrs}ชม.)</span></td>
-                    <td class="p-3 font-semibold">${row.otPayTotal.toFixed(2)}</td>
-                    <td class="p-3 font-bold text-blue-600">${row.total.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                `;
-                tbody.appendChild(tr);
-            });
-            document.getElementById('bulk-result-section').classList.remove('hidden');
-        }
-
-        function exportResult() {
-            let exportData = bulkDataResult.map(r => ({
-                "ชื่อพนักงาน": r.name,
-                "ประเภท": r.type,
-                "ฐานเงินเดือน": r.base,
-                "ชม. OT 1.5": r.ot15Hrs,
-                "เงิน OT 1.5 (บาท)": r.pay15,
-                "ชม. OT 2.0": r.ot2Hrs,
-                "เงิน OT 2.0 (บาท)": r.pay2,
-                "ชม. OT 3.0": r.ot3Hrs,
-                "เงิน OT 3.0 (บาท)": r.pay3,
-                "รวมเงิน OT ทั้งหมด": r.otPayTotal,
-                "ยอดรวมสุทธิ": r.total
-            }));
-            let wb = XLSX.utils.book_new();
-            let ws = XLSX.utils.json_to_sheet(exportData);
-            XLSX.utils.book_append_sheet(wb, ws, "Detailed_Salary_Result");
-            XLSX.writeFile(wb, "Payroll_Detailed_Calculation_Result.xlsx");
-        }
-    </script>
-</body>
-</html>
+            <div id="tab-bulk" class="
