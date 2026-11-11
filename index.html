@@ -195,13 +195,33 @@
                                 <span class="text-slate-400">ค่าล่วงเวลา (OT รวม):</span>
                                 <span id="resTotalOT" class="font-medium text-amber-400">0.00 บาท</span>
                             </div>
-                            <div class="flex justify-between">
-                                <span class="text-slate-400">รายได้อื่นๆ:</span>
-                                <span id="resOther" class="font-medium text-emerald-400">0.00 บาท</span>
+
+                            <!-- รายได้อื่นๆ พร้อมปุ่มขยาย/ซ่อนรายละเอียด -->
+                            <div class="border-t border-indigo-900/60 pt-2">
+                                <div class="flex justify-between items-center cursor-pointer select-none" onclick="toggleAccordion('otherDetails')">
+                                    <span class="text-slate-400 flex items-center space-x-1.5">
+                                        <span>รายได้อื่นๆ:</span>
+                                        <i id="icon-otherDetails" class="fa-solid fa-chevron-down text-[10px] transition-transform"></i>
+                                    </span>
+                                    <span id="resOther" class="font-medium text-emerald-400">0.00 บาท</span>
+                                </div>
+                                <div id="otherDetails" class="hidden pl-3 mt-1.5 space-y-1 text-xs text-slate-300 border-l-2 border-emerald-500/40">
+                                    <!-- Dynamic list inserted via JS -->
+                                </div>
                             </div>
-                            <div class="flex justify-between">
-                                <span class="text-slate-400">หักอื่นๆ / ประกันสังคม:</span>
-                                <span id="resDeduction" class="font-medium text-rose-400">0.00 บาท</span>
+
+                            <!-- หักอื่นๆ พร้อมปุ่มขยาย/ซ่อนรายละเอียด -->
+                            <div class="border-t border-indigo-900/60 pt-2">
+                                <div class="flex justify-between items-center cursor-pointer select-none" onclick="toggleAccordion('deductionDetails')">
+                                    <span class="text-slate-400 flex items-center space-x-1.5">
+                                        <span>หักอื่นๆ / ประกันสังคม:</span>
+                                        <i id="icon-deductionDetails" class="fa-solid fa-chevron-down text-[10px] transition-transform"></i>
+                                    </span>
+                                    <span id="resDeduction" class="font-medium text-rose-400">0.00 บาท</span>
+                                </div>
+                                <div id="deductionDetails" class="hidden pl-3 mt-1.5 space-y-1 text-xs text-slate-300 border-l-2 border-rose-500/40">
+                                    <!-- Dynamic list inserted via JS -->
+                                </div>
                             </div>
                         </div>
 
@@ -262,9 +282,9 @@
                         <div class="bg-white p-2 rounded border border-slate-200"><code>type</code> : monthly / daily</div>
                         <div class="bg-white p-2 rounded border border-slate-200"><code>salary_or_daily</code> : เงินเดือน/รายวัน</div>
                         <div class="bg-white p-2 rounded border border-slate-200"><code>work_days</code> : วันที่ทำงาน</div>
-                        <div class="bg-white p-2 rounded border border-slate-200"><code>ot15</code> : ชม. OT 1.5 (วันปกติ)</div>
-                        <div class="bg-white p-2 rounded border border-slate-200"><code>ot20</code> : ชม. OT 2.0 (วันหยุด)</div>
-                        <div class="bg-white p-2 rounded border border-slate-200"><code>ot30</code> : ชม. OT 3.0 (ล่วงเวลาวันหยุด)</div>
+                        <div class="bg-white p-2 rounded border border-slate-200"><code>ot15</code> : ชม. OT 1.5</div>
+                        <div class="bg-white p-2 rounded border border-slate-200"><code>ot20</code> : ชม. OT 2.0</div>
+                        <div class="bg-white p-2 rounded border border-slate-200"><code>ot30</code> : ชม. OT 3.0</div>
                         <div class="bg-white p-2 rounded border border-slate-200"><code>other_income</code> / <code>deductions</code></div>
                     </div>
                 </div>
@@ -331,6 +351,19 @@
             } else {
                 document.getElementById('tab-bulk').classList.add('active');
                 document.getElementById('btn-bulk').className = "px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 bg-white text-indigo-700 shadow-sm flex items-center space-x-2";
+            }
+        }
+
+        // ฟังก์ชันเปิด/ปิดแสดงรายละเอียดในกล่องสรุปผล
+        function toggleAccordion(id) {
+            const el = document.getElementById(id);
+            const icon = document.getElementById('icon-' + id);
+            if (el.classList.contains('hidden')) {
+                el.classList.remove('hidden');
+                icon.style.transform = 'rotate(180deg)';
+            } else {
+                el.classList.add('hidden');
+                icon.style.transform = 'rotate(0deg)';
             }
         }
 
@@ -415,19 +448,29 @@
             const ot20 = parseFloat(document.getElementById('ot20').value) || 0;
             const ot30 = parseFloat(document.getElementById('ot30').value) || 0;
 
-            // รวมยอดรายได้อื่นๆ จากช่องไดนามิกทั้งหมด
+            // รวบรวมรายได้อื่นๆ แบบไดนามิก
             let otherIncome = 0;
+            let otherListHtml = '';
             document.querySelectorAll('.dynamic-row-other').forEach(row => {
+                const title = row.querySelectorAll('input')[0].value || 'รายได้อื่นๆ';
                 const val = parseFloat(row.querySelectorAll('input')[1].value) || 0;
                 otherIncome += val;
+                otherListHtml += `<div class="flex justify-between"><span>• ${title}:</span> <span class="text-emerald-300">${val.toLocaleString('th-TH', {minimumFractionDigits: 2})} บาท</span></div>`;
             });
+            if (!otherListHtml) otherListHtml = '<span class="text-slate-400">ไม่มีรายการ</span>';
+            document.getElementById('otherDetails').innerHTML = otherListHtml;
 
-            // รวมยอดหักอื่นๆ จากช่องไดนามิกทั้งหมด
+            // รวบรวมหักอื่นๆ แบบไดนามิก
             let deductions = 0;
+            let deductionListHtml = '';
             document.querySelectorAll('.dynamic-row-deduction').forEach(row => {
+                const title = row.querySelectorAll('input')[0].value || 'หักอื่นๆ';
                 const val = parseFloat(row.querySelectorAll('input')[1].value) || 0;
                 deductions += val;
+                deductionListHtml += `<div class="flex justify-between"><span>• ${title}:</span> <span class="text-rose-300">${val.toLocaleString('th-TH', {minimumFractionDigits: 2})} บาท</span></div>`;
             });
+            if (!deductionListHtml) deductionListHtml = '<span class="text-slate-400">ไม่มีรายการ</span>';
+            document.getElementById('deductionDetails').innerHTML = deductionListHtml;
 
             let baseRateVal = 0;
             if (type === 'monthly') {
@@ -441,6 +484,12 @@
             document.getElementById('resName').innerText = name;
             document.getElementById('resBaseRate').innerText = res.baseRate.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' บาท';
             document.getElementById('resBasePay').innerText = res.basePay.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' บาท';
+            document.getElementById('txtOt15').innerText = ot15;
+            document.getElementById('txtOt20').innerText = ot20;
+            document.getElementById('txtOt30').innerText = ot30;
+            document.getElementById('resPay15').innerText = res.pay15.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' บาท';
+            document.getElementById('resPay20').innerText = res.pay20.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' บาท';
+            document.getElementById('resPay30').innerText = res.pay30.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' บาท';
             document.getElementById('resTotalOT').innerText = res.totalOT.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' บาท';
             document.getElementById('resOther').innerText = otherIncome.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' บาท';
             document.getElementById('resDeduction').innerText = deductions.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' บาท';
