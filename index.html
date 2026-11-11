@@ -116,14 +116,37 @@
                             </div>
                         </div>
 
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-slate-100 pt-4 mt-4">
-                            <div>
-                                <label class="block text-sm font-medium text-slate-700 mb-1">รายได้อื่นๆ / เบี้ยขยัน (บาท)</label>
-                                <input type="number" id="otherIncome" value="0" min="0" step="any" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none transition" oninput="calculateSingle()">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 border-t border-slate-100 pt-4 mt-4">
+                            <!-- รายได้อื่นๆ แบบเพิ่มรายการได้ -->
+                            <div class="space-y-2">
+                                <div class="flex justify-between items-center">
+                                    <label class="block text-sm font-medium text-slate-700">รายได้อื่นๆ / เบี้ยขยัน</label>
+                                    <button type="button" onclick="addDynamicRow('other')" class="px-2.5 py-1 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 rounded-lg text-xs font-medium transition flex items-center space-x-1">
+                                        <i class="fa-solid fa-plus"></i><span>เพิ่มรายการ</span>
+                                    </button>
+                                </div>
+                                <div id="otherIncomeContainer" class="space-y-2">
+                                    <div class="flex gap-2 dynamic-row-other">
+                                        <input type="text" placeholder="ชื่อรายการ" class="w-2/3 px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none text-sm" value="เบี้ยขยัน" oninput="calculateSingle()">
+                                        <input type="number" placeholder="จำนวนเงิน" value="0" min="0" step="any" class="w-1/3 px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none text-sm" oninput="calculateSingle()">
+                                    </div>
+                                </div>
                             </div>
-                            <div>
-                                <label class="block text-sm font-medium text-slate-700 mb-1">หักอื่นๆ / ประกันสังคม (บาท)</label>
-                                <input type="number" id="deductions" value="0" min="0" step="any" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none transition" oninput="calculateSingle()">
+
+                            <!-- หักอื่นๆ แบบเพิ่มรายการได้ -->
+                            <div class="space-y-2">
+                                <div class="flex justify-between items-center">
+                                    <label class="block text-sm font-medium text-slate-700">หักอื่นๆ / ประกันสังคม</label>
+                                    <button type="button" onclick="addDynamicRow('deduction')" class="px-2.5 py-1 bg-rose-50 text-rose-600 hover:bg-rose-100 rounded-lg text-xs font-medium transition flex items-center space-x-1">
+                                        <i class="fa-solid fa-plus"></i><span>เพิ่มรายการ</span>
+                                    </button>
+                                </div>
+                                <div id="deductionContainer" class="space-y-2">
+                                    <div class="flex gap-2 dynamic-row-deduction">
+                                        <input type="text" placeholder="ชื่อรายการ" class="w-2/3 px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none text-sm" value="ประกันสังคม" oninput="calculateSingle()">
+                                        <input type="number" placeholder="จำนวนเงิน" value="0" min="0" step="any" class="w-1/3 px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none text-sm" oninput="calculateSingle()">
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </form>
@@ -137,7 +160,7 @@
                             <span id="resEmpTypeTag" class="px-3 py-1 bg-indigo-500/30 text-indigo-300 text-xs rounded-full font-medium border border-indigo-400/20">พนักงานรายเดือน</span>
                         </div>
 
-                        <div class="space-y-3.5 text-sm">
+                        <div class="space-y-3 text-sm">
                             <div class="flex justify-between">
                                 <span class="text-slate-400">ชื่อพนักงาน:</span>
                                 <span id="resName" class="font-medium text-white">-</span>
@@ -150,6 +173,24 @@
                                 <span class="text-slate-400">ค่าจ้างตามงวดงาน:</span>
                                 <span id="resBasePay" class="font-medium text-white">0.00 บาท</span>
                             </div>
+
+                            <!-- ส่วนแจกแจงรายละเอียด OT รายเรท -->
+                            <div class="bg-indigo-900/30 p-2.5 rounded-xl border border-indigo-800/50 space-y-1 text-xs">
+                                <div class="font-medium text-indigo-300 mb-1">รายละเอียดค่า OT:</div>
+                                <div class="flex justify-between text-slate-300">
+                                    <span>• OT 1.5 (<span id="txtOt15">0</span> ชม.):</span>
+                                    <span id="resPay15" class="text-amber-300">0.00 บาท</span>
+                                </div>
+                                <div class="flex justify-between text-slate-300">
+                                    <span>• OT 2.0 (<span id="txtOt20">0</span> ชม.):</span>
+                                    <span id="resPay20" class="text-amber-300">0.00 บาท</span>
+                                </div>
+                                <div class="flex justify-between text-slate-300">
+                                    <span>• OT 3.0 (<span id="txtOt30">0</span> ชม.):</span>
+                                    <span id="resPay30" class="text-amber-300">0.00 บาท</span>
+                                </div>
+                            </div>
+
                             <div class="flex justify-between">
                                 <span class="text-slate-400">ค่าล่วงเวลา (OT รวม):</span>
                                 <span id="resTotalOT" class="font-medium text-amber-400">0.00 บาท</span>
@@ -164,10 +205,10 @@
                             </div>
                         </div>
 
-                        <div class="bg-white/5 p-4 rounded-xl border border-white/10 mt-6 text-xs text-indigo-200">
+                        <div class="bg-white/5 p-4 rounded-xl border border-white/10 mt-5 text-xs text-indigo-200">
                             <p class="font-semibold text-white mb-1"><i class="fa-solid fa-circle-info mr-1"></i> สูตรการคำนวณ OT ตามเงื่อนไข:</p>
-                            <p class="italic text-slate-300">อัตราต่อชั่วโมง = (เงินเดือนหรือเทียบเท่า) ÷ 30 ÷ 8</p>
-                            <p class="italic text-slate-300">ค่า OT = อัตราต่อชั่วโมง × ชั่วโมง OT × ตัวคูณ (1.5, 2, 3)</p>
+                            <p class="italic text-slate-300">อัตราต่อชั่วโมง = (ฐานเงินเดือนหรือเทียบเท่า) ÷ 30 ÷ 8</p>
+                            <p class="italic text-slate-300">ค่า OT = อัตราต่อชั่วโมง × จำนวนชั่วโมง OT × ตัวคูณ (1.5, 2, 3)</p>
                         </div>
                     </div>
 
@@ -252,6 +293,9 @@
                                 <th class="p-3 text-right">ฐานเงินเดือน/วัน</th>
                                 <th class="p-3 text-center">วันทำงาน</th>
                                 <th class="p-3 text-right">ค่าจ้างงวดงาน</th>
+                                <th class="p-3 text-right">OT 1.5 <span class="block text-[10px] font-normal text-slate-500">(ชม./บาท)</span></th>
+                                <th class="p-3 text-right">OT 2.0 <span class="block text-[10px] font-normal text-slate-500">(ชม./บาท)</span></th>
+                                <th class="p-3 text-right">OT 3.0 <span class="block text-[10px] font-normal text-slate-500">(ชม./บาท)</span></th>
                                 <th class="p-3 text-right">ค่า OT รวม</th>
                                 <th class="p-3 text-right">รายได้อื่นๆ</th>
                                 <th class="p-3 text-right">หักอื่นๆ</th>
@@ -288,6 +332,21 @@
                 document.getElementById('tab-bulk').classList.add('active');
                 document.getElementById('btn-bulk').className = "px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 bg-white text-indigo-700 shadow-sm flex items-center space-x-2";
             }
+        }
+
+        // เพิ่มช่องกรอกรายได้อื่นๆ หรือหักอื่นๆ แบบไดนามิก
+        function addDynamicRow(type, nameVal = '', amountVal = 0) {
+            const containerId = type === 'other' ? 'otherIncomeContainer' : 'deductionContainer';
+            const container = document.getElementById(containerId);
+            
+            const div = document.createElement('div');
+            div.className = `flex gap-2 dynamic-row-${type}`;
+            div.innerHTML = `
+                <input type="text" placeholder="ชื่อรายการ" class="w-2/3 px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none text-sm" value="${nameVal}" oninput="calculateSingle()">
+                <input type="number" placeholder="จำนวนเงิน" value="${amountVal}" min="0" step="any" class="w-1/4 px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none text-sm" oninput="calculateSingle()">
+                <button type="button" onclick="this.parentElement.remove(); calculateSingle();" class="w-1/12 text-rose-500 hover:text-rose-700 flex items-center justify-center"><i class="fa-solid fa-trash-can text-xs"></i></button>
+            `;
+            container.appendChild(div);
         }
 
         // สลับฟิลด์กรอกข้อมูลตามประเภทการจ้าง
@@ -339,6 +398,9 @@
                 baseRate: otBaseRate,
                 hourlyRate: hourlyRate,
                 basePay: basePay,
+                pay15: pay15,
+                pay20: pay20,
+                pay30: pay30,
                 totalOT: totalOT,
                 netPay: netPay < 0 ? 0 : netPay
             };
@@ -352,8 +414,20 @@
             const ot15 = parseFloat(document.getElementById('ot15').value) || 0;
             const ot20 = parseFloat(document.getElementById('ot20').value) || 0;
             const ot30 = parseFloat(document.getElementById('ot30').value) || 0;
-            const otherIncome = parseFloat(document.getElementById('otherIncome').value) || 0;
-            const deductions = parseFloat(document.getElementById('deductions').value) || 0;
+
+            // รวมยอดรายได้อื่นๆ จากช่องไดนามิกทั้งหมด
+            let otherIncome = 0;
+            document.querySelectorAll('.dynamic-row-other').forEach(row => {
+                const val = parseFloat(row.querySelectorAll('input')[1].value) || 0;
+                otherIncome += val;
+            });
+
+            // รวมยอดหักอื่นๆ จากช่องไดนามิกทั้งหมด
+            let deductions = 0;
+            document.querySelectorAll('.dynamic-row-deduction').forEach(row => {
+                const val = parseFloat(row.querySelectorAll('input')[1].value) || 0;
+                deductions += val;
+            });
 
             let baseRateVal = 0;
             if (type === 'monthly') {
@@ -457,6 +531,12 @@
                     "ฐานเงินเดือน/วัน": baseRate,
                     "วันทำงาน": workDays,
                     "ค่าจ้างงวดงาน": res.basePay,
+                    "ชม. OT 1.5": ot15,
+                    "เงิน OT 1.5": res.pay15,
+                    "ชม. OT 2.0": ot20,
+                    "เงิน OT 2.0": res.pay20,
+                    "ชม. OT 3.0": ot30,
+                    "เงิน OT 3.0": res.pay30,
                     "ค่า OT รวม": res.totalOT,
                     "รายได้อื่นๆ": otherIncome,
                     "หักอื่นๆ": deductions,
@@ -473,6 +553,9 @@
                     <td class="p-3 text-right">${baseRate.toLocaleString('th-TH', {minimumFractionDigits: 2})}</td>
                     <td class="p-3 text-center">${workDays}</td>
                     <td class="p-3 text-right">${res.basePay.toLocaleString('th-TH', {minimumFractionDigits: 2})}</td>
+                    <td class="p-3 text-right">${res.pay15.toLocaleString('th-TH', {minimumFractionDigits: 2})} <span class="text-xs text-slate-400">(${ot15}ชม.)</span></td>
+                    <td class="p-3 text-right">${res.pay20.toLocaleString('th-TH', {minimumFractionDigits: 2})} <span class="text-xs text-slate-400">(${ot20}ชม.)</span></td>
+                    <td class="p-3 text-right">${res.pay30.toLocaleString('th-TH', {minimumFractionDigits: 2})} <span class="text-xs text-slate-400">(${ot30}ชม.)</span></td>
                     <td class="p-3 text-right text-amber-600 font-medium">${res.totalOT.toLocaleString('th-TH', {minimumFractionDigits: 2})}</td>
                     <td class="p-3 text-right text-emerald-600">${otherIncome.toLocaleString('th-TH', {minimumFractionDigits: 2})}</td>
                     <td class="p-3 text-right text-rose-600">${deductions.toLocaleString('th-TH', {minimumFractionDigits: 2})}</td>
