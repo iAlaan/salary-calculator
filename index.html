@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบคำนวณเงินเดือนและค่าล่วงเวลาพนักงาน (Payroll & OT Calculator)</title>
+    <title>ระบบคำนวณเงินเดือนและค่าล่วงเวลาพนักงาน (Payroll & OT Calculator 2569)</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- SheetJS (xlsx) CDN สำหรับอ่านและเขียนไฟล์ Excel -->
@@ -22,31 +22,56 @@
         .tab-content.active {
             display: block;
         }
+        .ded-cat-panel {
+            display: none;
+        }
+        .ded-cat-panel.active {
+            display: block;
+        }
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #payslipPrintArea, #payslipPrintArea * {
+                visibility: visible;
+            }
+            #payslipPrintArea {
+                position: fixed;
+                left: 0;
+                top: 0;
+                width: 100%;
+                background: white;
+                padding: 24px;
+            }
+            .no-print {
+                display: none !important;
+            }
+        }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col justify-between">
 
     <!-- ส่วนหัวของเว็บไซต์ -->
     <header class="bg-gradient-to-r from-indigo-600 to-blue-700 text-white shadow-lg">
-        <div class="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center">
-            <div class="flex items-center space-x-3 mb-4 md:mb-0">
-                <div class="bg-white/10 p-3 rounded-xl backdrop-blur-sm">
+        <div class="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="flex items-center space-x-3">
+                <div class="bg-white/10 p-3 rounded-2xl backdrop-blur-sm border border-white/15">
                     <i class="fa-solid fa-calculator text-2xl text-amber-300"></i>
                 </div>
                 <div>
-                    <h1 class="text-2xl font-bold tracking-tight">ระบบคำนวณเงินเดือนและค่าล่วงเวลา (OT)</h1>
-                    <p class="text-indigo-200 text-sm">คำนวณแม่นยำ รองรับรายวัน รายเดือน นำเข้าและส่งออก Excel ได้ง่ายดาย</p>
+                    <h1 class="text-xl sm:text-2xl font-bold tracking-tight">ระบบคำนวณเงินเดือนและค่าล่วงเวลา (OT)</h1>
+                    <p class="text-indigo-100 text-xs sm:text-sm">รองรับรายวัน รายเดือน ประกันสังคมและลดหย่อนภาษีปี 2569 พร้อมนำเข้า-ส่งออก Excel</p>
                 </div>
             </div>
-            <!-- เมนูแท็บ -->
-            <div class="flex bg-indigo-900/40 p-1.5 rounded-xl backdrop-blur-sm border border-indigo-400/30">
-                <button onclick="switchTab('single')" id="btn-single" class="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 bg-white text-indigo-700 shadow-sm flex items-center space-x-2">
+            <!-- เมนูแท็บหลัก -->
+            <div class="flex bg-indigo-950/40 p-1.5 rounded-2xl backdrop-blur-sm border border-indigo-400/30 w-full md:w-auto justify-center">
+                <button type="button" onclick="switchTab('single')" id="btn-single" class="flex-1 md:flex-initial px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 bg-white text-indigo-700 shadow-sm flex items-center justify-center space-x-2">
                     <i class="fa-solid fa-user"></i>
                     <span>คำนวณรายบุคคล</span>
                 </button>
-                <button onclick="switchTab('bulk')" id="btn-bulk" class="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 text-indigo-100 hover:text-white flex items-center space-x-2">
+                <button type="button" onclick="switchTab('bulk')" id="btn-bulk" class="flex-1 md:flex-initial px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 text-indigo-100 hover:text-white flex items-center justify-center space-x-2">
                     <i class="fa-solid fa-file-excel"></i>
-                    <span>นำเข้าไฟล์ Excel (กลุ่ม)</span>
+                    <span>นำเข้าไฟล์ Excel (คำนวณหลายคน)</span>
                 </button>
             </div>
         </div>
@@ -57,263 +82,731 @@
 
         <!-- ================= แท็บที่ 1: คำนวณรายบุคคล ================= -->
         <div id="tab-single" class="tab-content active space-y-6">
-            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                <!-- ฟอร์มกรอกข้อมูล -->
-                <div class="lg:col-span-7 bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-                    <h2 class="text-lg font-bold text-slate-800 mb-4 flex items-center space-x-2">
-                        <i class="fa-solid fa-id-card text-indigo-600"></i>
-                        <span>ข้อมูลพนักงานและการทำงาน</span>
-                    </h2>
-                    
-                    <form id="singleForm" class="space-y-4" onsubmit="event.preventDefault(); calculateSingle();">
+
+            <!-- แถบ Demo Presets สำหรับพรีเซนต์หรือทดสอบทันที -->
+            <div class="bg-white px-4 py-3.5 rounded-2xl shadow-sm border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div class="flex items-center space-x-2.5 text-xs font-semibold text-slate-700">
+                    <span class="w-8 h-8 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center shrink-0">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i>
+                    </span>
+                    <div>
+                        <span class="block">โหลดเคสตัวอย่างจำลอง (Demo Presets)</span>
+                        <span class="text-[11px] font-normal text-slate-400">คลิกเพื่อกรอกข้อมูลตัวอย่างอัตโนมัติสำหรับทดสอบหรือนำเสนอ</span>
+                    </div>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                    <button type="button" onclick="applyDemoPreset('staff_m33')" class="px-3 py-2 rounded-xl text-xs font-medium bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 transition">
+                        พนักงานออฟฟิศ (ม.33)
+                    </button>
+                    <button type="button" onclick="applyDemoPreset('supervisor_tax')" class="px-3 py-2 rounded-xl text-xs font-medium bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 transition">
+                        หัวหน้างาน (ถึงเกณฑ์ภาษี)
+                    </button>
+                    <button type="button" onclick="applyDemoPreset('daily_factory')" class="px-3 py-2 rounded-xl text-xs font-medium bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200 transition">
+                        พนักงานรายวัน (ฝ่ายผลิต)
+                    </button>
+                    <button type="button" onclick="applyDemoPreset('ot_overload')" class="px-3 py-2 rounded-xl text-xs font-medium bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 transition">
+                        ทดสอบ OT เกินกฎหมาย
+                    </button>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                <!-- คอลัมน์ซ้าย: ฟอร์มกรอกข้อมูล -->
+                <div class="lg:col-span-7 space-y-6">
+
+                    <!-- การ์ดที่ 1: ข้อมูลพนักงานและการทำงาน -->
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+                        <h2 class="text-lg font-bold text-slate-800 flex items-center space-x-2">
+                            <span class="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-sm"><i class="fa-solid fa-id-card"></i></span>
+                            <span>ข้อมูลพนักงานและการทำงาน</span>
+                        </h2>
+
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
-                                <label class="block text-sm font-medium text-slate-700 mb-1">ชื่อ-นามสกุล พนักงาน</label>
-                                <input type="text" id="empName" placeholder="เช่น สมชาย ใจดี" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition" value="พนักงาน ตัวอย่าง">
+                                <label for="empName" class="block text-sm font-medium text-slate-700 mb-1">ชื่อ-นามสกุล พนักงาน</label>
+                                <input type="text" id="empName" placeholder="เช่น น.ส. ปนัดดา ใจดี" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition text-sm" value="น.ส. ปนัดดา ใจดี" oninput="calculateSingle()">
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-slate-700 mb-1">ประเภทการจ้าง</label>
-                                <select id="empType" onchange="toggleEmpType()" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition bg-white">
-                                    <option value="monthly">รายเดือน</option>
-                                    <option value="daily">รายวัน</option>
+                                <label for="empType" class="block text-sm font-medium text-slate-700 mb-1">ประเภทการจ้าง</label>
+                                <select id="empType" onchange="toggleEmpType(true)" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition bg-white text-sm">
+                                    <option value="monthly">รายเดือน (Monthly)</option>
+                                    <option value="daily">รายวัน (Daily)</option>
                                 </select>
                             </div>
                         </div>
 
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div id="groupMonthlySalary">
-                                <label class="block text-sm font-medium text-slate-700 mb-1">เงินเดือนประจำ (บาท)</label>
-                                <input type="number" id="monthlySalary" value="15000" min="0" step="any" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition" oninput="calculateSingle()">
+                                <label for="monthlySalary" class="block text-sm font-medium text-slate-700 mb-1">เงินเดือนประจำ (บาท)</label>
+                                <input type="number" id="monthlySalary" value="25000" min="0" step="any" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition text-sm" oninput="calculateSingle()">
                             </div>
                             <div id="groupDailyRate" style="display: none;">
-                                <label class="block text-sm font-medium text-slate-700 mb-1">อัตราค่าจ้างต่อวัน (บาท)</label>
-                                <input type="number" id="dailyRate" value="500" min="0" step="any" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition" oninput="calculateSingle()">
+                                <label for="dailyRate" class="block text-sm font-medium text-slate-700 mb-1">อัตราค่าจ้างต่อวัน (บาท)</label>
+                                <input type="number" id="dailyRate" value="550" min="0" step="any" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition text-sm" oninput="calculateSingle()">
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-slate-700 mb-1" id="labelDays">จำนวนวันที่ทำงาน (วัน)</label>
-                                <input type="number" id="workDays" value="30" min="0" max="31" step="any" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition" oninput="calculateSingle()">
+                                <label for="workDays" class="block text-sm font-medium text-slate-700 mb-1" id="labelDays">จำนวนวันที่ทำงานในเดือน (วัน)</label>
+                                <input type="number" id="workDays" value="30" min="0" max="31" step="any" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition text-sm" oninput="calculateSingle()">
                             </div>
                         </div>
 
-                        <div class="border-t border-slate-100 pt-4 mt-4">
-                            <h3 class="text-sm font-bold text-slate-700 mb-3 flex items-center space-x-2">
-                                <i class="fa-solid fa-clock-rotate-left text-amber-500"></i>
-                                <span>บันทึกชั่วโมงล่วงเวลา (OT) ตามตัวคูณ</span>
+                        <!-- แถบแสดงฐาน OT และอัตราต่อชั่วโมงอัตโนมัติ -->
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-slate-50 p-3.5 rounded-xl border border-slate-200/80 text-xs">
+                            <div>
+                                <span class="text-slate-500 block">ค่าจ้างตามงวดงาน</span>
+                                <span id="inlinePeriodWage" class="text-sm font-bold text-slate-800">25,000.00 บาท</span>
+                            </div>
+                            <div>
+                                <span class="text-slate-500 block">ฐาน OT (รายเดือนเทียบเท่า)</span>
+                                <span id="inlineBaseOT" class="text-sm font-bold text-indigo-700">25,000.00 บาท</span>
+                            </div>
+                            <div>
+                                <span class="text-slate-500 block">อัตราค่าจ้างปกติต่อชั่วโมง</span>
+                                <span id="inlineHourlyRate" class="text-sm font-bold text-blue-700">104.17 บาท/ชม.</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- การ์ดที่ 2: บันทึกชั่วโมงล่วงเวลา (OT) -->
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+                        <div class="flex flex-wrap justify-between items-center gap-2">
+                            <h3 class="text-base font-bold text-slate-800 flex items-center space-x-2">
+                                <span class="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-sm"><i class="fa-solid fa-clock-rotate-left"></i></span>
+                                <span>บันทึกชั่วโมงล่วงเวลา (OT)</span>
                             </h3>
-                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                                <div>
-                                    <label class="block text-xs font-semibold text-slate-600 mb-1">OT 1.5 <span class="font-normal text-slate-400">(ล่วงเวลาวันปกติ)</span></label>
-                                    <input type="number" id="ot15" value="0" min="0" step="any" class="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none text-sm" oninput="calculateSingle()">
+                            <span id="inlineTotalOTBadge" class="text-xs font-bold text-amber-700 bg-amber-50 px-3 py-1 rounded-xl border border-amber-200">รวมค่า OT: 937.50 บาท</span>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <div class="bg-slate-50 p-3 rounded-xl border border-slate-200/80 space-y-1.5">
+                                <label for="ot15" class="block text-xs font-bold text-slate-700">OT 1.5 <span class="font-normal text-slate-500">(ล่วงเวลาวันปกติ)</span></label>
+                                <input type="number" id="ot15" value="6" min="0" step="any" class="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white focus:ring-2 focus:ring-indigo-500 outline-none text-sm" oninput="calculateSingle()">
+                                <div class="flex justify-between text-[11px] text-slate-500 pt-0.5">
+                                    <span id="rate15Label">156.25 บ./ชม.</span>
+                                    <span id="subPay15Label" class="font-semibold text-amber-700">937.50 บ.</span>
                                 </div>
-                                <div>
-                                    <label class="block text-xs font-semibold text-slate-600 mb-1">OT 2.0 <span class="font-normal text-slate-400">(ทำงานวันหยุด)</span></label>
-                                    <input type="number" id="ot20" value="0" min="0" step="any" class="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none text-sm" oninput="calculateSingle()">
+                            </div>
+                            <div class="bg-slate-50 p-3 rounded-xl border border-slate-200/80 space-y-1.5">
+                                <label for="ot20" class="block text-xs font-bold text-slate-700">OT 2.0 <span class="font-normal text-slate-500">(ทำงานวันหยุด)</span></label>
+                                <input type="number" id="ot20" value="0" min="0" step="any" class="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white focus:ring-2 focus:ring-indigo-500 outline-none text-sm" oninput="calculateSingle()">
+                                <div class="flex justify-between text-[11px] text-slate-500 pt-0.5">
+                                    <span id="rate20Label">208.33 บ./ชม.</span>
+                                    <span id="subPay20Label" class="font-semibold text-amber-700">0.00 บ.</span>
                                 </div>
-                                <div>
-                                    <label class="block text-xs font-semibold text-slate-600 mb-1">OT 3.0 <span class="font-normal text-slate-400">(ล่วงเวลาวันหยุด)</span></label>
-                                    <input type="number" id="ot30" value="0" min="0" step="any" class="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none text-sm" oninput="calculateSingle()">
+                            </div>
+                            <div class="bg-slate-50 p-3 rounded-xl border border-slate-200/80 space-y-1.5">
+                                <label for="ot30" class="block text-xs font-bold text-slate-700">OT 3.0 <span class="font-normal text-slate-500">(ล่วงเวลาวันหยุด)</span></label>
+                                <input type="number" id="ot30" value="0" min="0" step="any" class="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white focus:ring-2 focus:ring-indigo-500 outline-none text-sm" oninput="calculateSingle()">
+                                <div class="flex justify-between text-[11px] text-slate-500 pt-0.5">
+                                    <span id="rate30Label">312.50 บ./ชม.</span>
+                                    <span id="subPay30Label" class="font-semibold text-amber-700">0.00 บ.</span>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 border-t border-slate-100 pt-4 mt-4">
-                            <!-- รายได้อื่นๆ แบบเพิ่มรายการได้ -->
-                            <div class="space-y-2">
+                        <!-- แถบแจ้งเตือนการทำ OT ตามกฎหมายแรงงาน (พ.ร.บ. คุ้มครองแรงงาน มาตรา 26) -->
+                        <div id="otComplianceBanner" class="p-3.5 rounded-xl border bg-emerald-50 border-emerald-200 text-emerald-800 flex items-start space-x-2.5 text-xs transition-all">
+                            <i id="otComplianceIcon" class="fa-solid fa-circle-check text-emerald-600 text-base mt-0.5 shrink-0"></i>
+                            <div class="space-y-0.5">
+                                <div id="otComplianceTitle" class="font-bold">ชั่วโมง OT รวม 6 ชม. (อยู่ในเกณฑ์กฎหมายไม่เกิน 154 ชม.)</div>
+                                <div id="otComplianceSub" class="text-[11px] opacity-90">อ้างอิง พ.ร.บ. คุ้มครองแรงงาน มาตรา 26: กำหนดชั่วโมง OT และทำงานวันหยุดรวมไม่เกิน 36 ชม./สัปดาห์</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- การ์ดที่ 3: รายได้อื่นๆ และ ประกันสังคม / รายการหัก -->
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <!-- รายได้อื่นๆ -->
+                            <div class="space-y-3">
                                 <div class="flex justify-between items-center">
-                                    <label class="block text-sm font-medium text-slate-700">รายได้อื่นๆ / เบี้ยขยัน</label>
-                                    <button type="button" onclick="addDynamicRow('other')" class="px-2.5 py-1 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 rounded-lg text-xs font-medium transition flex items-center space-x-1">
+                                    <h3 class="text-sm font-bold text-slate-800 flex items-center space-x-2">
+                                        <span class="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center text-xs"><i class="fa-solid fa-coins"></i></span>
+                                        <span>รายได้อื่นๆ</span>
+                                    </h3>
+                                    <button type="button" onclick="addDynamicRow('other')" class="px-3 py-1.5 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 rounded-xl text-xs font-semibold transition flex items-center space-x-1">
                                         <i class="fa-solid fa-plus"></i><span>เพิ่มรายการ</span>
                                     </button>
                                 </div>
                                 <div id="otherIncomeContainer" class="space-y-2">
                                     <div class="flex gap-2 dynamic-row-other">
                                         <input type="text" placeholder="ชื่อรายการ" class="w-2/3 px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none text-sm" value="เบี้ยขยัน" oninput="calculateSingle()">
-                                        <input type="number" placeholder="จำนวนเงิน" value="0" min="0" step="any" class="w-1/3 px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none text-sm" oninput="calculateSingle()">
+                                        <input type="number" placeholder="จำนวนเงิน" value="1500" min="0" step="any" class="w-1/4 px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none text-sm" oninput="calculateSingle()">
+                                        <button type="button" onclick="this.parentElement.remove(); calculateSingle();" aria-label="ลบรายการ" class="w-1/12 text-rose-500 hover:text-rose-700 flex items-center justify-center"><i class="fa-solid fa-trash-can text-xs"></i></button>
                                     </div>
                                 </div>
                             </div>
 
-                            <!-- หักอื่นๆ แบบเพิ่มรายการได้ -->
-                            <div class="space-y-2">
+                            <!-- ประกันสังคมและรายการหักอื่นๆ -->
+                            <div class="space-y-3">
                                 <div class="flex justify-between items-center">
-                                    <label class="block text-sm font-medium text-slate-700">ประกันสังคม และรายการหักอื่นๆ</label>
-                                    <button type="button" onclick="addDynamicRow('deduction')" class="px-2.5 py-1 bg-rose-50 text-rose-600 hover:bg-rose-100 rounded-lg text-xs font-medium transition flex items-center space-x-1">
+                                    <h3 class="text-sm font-bold text-slate-800 flex items-center space-x-2">
+                                        <span class="w-7 h-7 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center text-xs"><i class="fa-solid fa-shield-halved"></i></span>
+                                        <span>ประกันสังคม & รายการหัก</span>
+                                    </h3>
+                                    <button type="button" onclick="addDynamicRow('deduction')" class="px-3 py-1.5 bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 rounded-xl text-xs font-semibold transition flex items-center space-x-1">
                                         <i class="fa-solid fa-plus"></i><span>เพิ่มรายการหัก</span>
                                     </button>
                                 </div>
 
-                                <!-- ตัวเลือกประเภทประกันสังคม (ปี 2569) -->
+                                <!-- ประกันสังคม ปี 2569 -->
                                 <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-1.5">
                                     <div class="flex justify-between items-center">
-                                        <label for="ssoType" class="text-xs font-semibold text-slate-700">ประเภทประกันสังคม (อัปเดตปี 2569)</label>
-                                        <span id="ssoCalculatedBadge" class="text-xs font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded-md border border-rose-200">หัก 750.00 บาท</span>
+                                        <label for="ssoType" class="text-xs font-semibold text-slate-700">ประกันสังคม (ปี 2569)</label>
+                                        <span id="ssoCalculatedBadge" class="text-xs font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded-lg border border-rose-200">หัก 875.00 บาท</span>
                                     </div>
                                     <select id="ssoType" onchange="calculateSingle()" class="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none text-xs bg-white text-slate-700">
-                                        <option value="33" selected>มาตรา 33 (ลูกจ้างประจำ - 5% เพดานฐาน 17,500 บ. สูงสุด 875 บ.)</option>
-                                        <option value="39">มาตรา 39 (ผู้ประกันตนสมัครใจ - เหมาจ่าย 432 บ./เดือน)</option>
-                                        <option value="40_1">มาตรา 40 ทางเลือกที่ 1 (เหมาจ่าย 70 บ./เดือน)</option>
-                                        <option value="40_2">มาตรา 40 ทางเลือกที่ 2 (เหมาจ่าย 100 บ./เดือน)</option>
-                                        <option value="40_3">มาตรา 40 ทางเลือกที่ 3 (เหมาจ่าย 300 บ./เดือน)</option>
                                         <option value="none">ไม่หักประกันสังคม (0 บาท)</option>
+                                        <option value="33" selected>มาตรา 33 (5% เพดานฐาน 17,500 บ. = สูงสุด 875 บ./ด.)</option>
+                                        <option value="39">มาตรา 39 (คงที่ 432 บาท/เดือน)</option>
+                                        <option value="40_1">มาตรา 40 ทางเลือก 1 (คงที่ 70 บาท/เดือน)</option>
+                                        <option value="40_2">มาตรา 40 ทางเลือก 2 (คงที่ 100 บาท/เดือน)</option>
+                                        <option value="40_3">มาตรา 40 ทางเลือก 3 (คงที่ 300 บาท/เดือน)</option>
                                     </select>
-                                </div>
-
-                                <!-- ตัวเลือกคำนวณภาษีเงินได้บุคคลธรรมดาแบบขั้นบันได -->
-                                <div class="bg-indigo-50/60 p-3 rounded-xl border border-indigo-200/80 space-y-1.5">
-                                    <div class="flex justify-between items-center">
-                                        <label class="inline-flex items-center space-x-2 cursor-pointer select-none">
-                                            <input type="checkbox" id="enableTax" checked onchange="calculateSingle();" class="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500">
-                                            <span class="text-xs font-semibold text-slate-700">หักภาษีขั้นบันไดอัตโนมัติ (รายเดือน)</span>
-                                        </label>
-                                        <span id="taxCalculatedBadge" class="text-xs font-bold text-indigo-700 bg-white px-2 py-0.5 rounded-md border border-indigo-200">หัก 0.00 บาท</span>
-                                    </div>
-                                    <div class="text-[11px] text-slate-500">
-                                        หักค่าใช้จ่าย 50% (สูงสุด 100,000 บ.) + ลดหย่อนส่วนตัว 60,000 บ. + ประกันสังคมทั้งปี
-                                    </div>
                                 </div>
 
                                 <div id="deductionContainer" class="space-y-2">
                                     <div class="flex gap-2 dynamic-row-deduction">
                                         <input type="text" placeholder="ชื่อรายการหักอื่นๆ" class="w-2/3 px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none text-sm" value="หักอื่นๆ" oninput="calculateSingle()">
                                         <input type="number" placeholder="จำนวนเงิน" value="0" min="0" step="any" class="w-1/4 px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none text-sm" oninput="calculateSingle()">
-                                        <button type="button" onclick="this.parentElement.remove(); calculateSingle();" class="w-1/12 text-rose-500 hover:text-rose-700 flex items-center justify-center"><i class="fa-solid fa-trash-can text-xs"></i></button>
+                                        <button type="button" onclick="this.parentElement.remove(); calculateSingle();" aria-label="ลบรายการหัก" class="w-1/12 text-rose-500 hover:text-rose-700 flex items-center justify-center"><i class="fa-solid fa-trash-can text-xs"></i></button>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                    </form>
-                </div>
+                    </div>
 
-                <!-- ผลลัพธ์การคำนวณรายบุคคล -->
-                <div class="lg:col-span-5 bg-gradient-to-br from-slate-900 to-indigo-950 text-white p-6 rounded-2xl shadow-xl flex flex-col justify-between">
-                    <div>
-                        <div class="flex justify-between items-center pb-4 border-b border-indigo-800/60 mb-4">
-                            <h3 class="text-base font-semibold text-indigo-200">สรุปผลการคำนวณ</h3>
-                            <span id="resEmpTypeTag" class="px-3 py-1 bg-indigo-500/30 text-indigo-300 text-xs rounded-full font-medium border border-indigo-400/20">พนักงานรายเดือน</span>
+                    <!-- การ์ดที่ 4: ภาษีเงินได้บุคคลธรรมดาแบบขั้นบันได & รายการลดหย่อนภาษี ปี 2569 -->
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+                        <div class="flex flex-wrap justify-between items-center gap-2">
+                            <h3 class="text-base font-bold text-slate-800 flex items-center space-x-2">
+                                <span class="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-sm"><i class="fa-solid fa-scale-balanced"></i></span>
+                                <span>ภาษีเงินได้บุคคลธรรมดา (ขั้นบันได ปี 2569)</span>
+                            </h3>
+                            <span id="taxCalculatedBadge" class="text-xs font-bold text-indigo-700 bg-indigo-50 px-3 py-1 rounded-xl border border-indigo-200">หัก 0.00 บาท/ด.</span>
                         </div>
 
-                        <div class="space-y-3 text-sm">
-                            <div class="flex justify-between">
-                                <span class="text-slate-400">ชื่อพนักงาน:</span>
-                                <span id="resName" class="font-medium text-white">-</span>
+                        <div class="bg-indigo-50/70 p-3.5 rounded-xl border border-indigo-200/80 flex flex-wrap justify-between items-center gap-2">
+                            <label class="inline-flex items-center space-x-2.5 cursor-pointer select-none">
+                                <input type="checkbox" id="enableTax" checked onchange="calculateSingle()" class="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500">
+                                <span class="text-sm font-semibold text-slate-800">หักภาษีขั้นบันไดอัตโนมัติ (รายเดือน = ภาษีทั้งปี ÷ 12)</span>
+                            </label>
+                            <span class="text-[11px] text-slate-500">คำนวณตามเกณฑ์กรมสรรพากร 8 ขั้นบันได</span>
+                        </div>
+
+                        <!-- กล่องเปิด/ปิด รายการลดหย่อนภาษี ปี 2569 (4 หมวด) -->
+                        <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+                            <button type="button" onclick="toggleDeductionPanel()" class="w-full px-4 py-3 flex justify-between items-center text-left hover:bg-slate-50 transition">
+                                <div class="flex items-center space-x-2.5">
+                                    <span class="w-7 h-7 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center text-xs"><i class="fa-solid fa-list-check"></i></span>
+                                    <div>
+                                        <span class="text-xs sm:text-sm font-bold text-slate-800 block">รายการลดหย่อนภาษี ปี 2569 (4 หมวดตามเกณฑ์สรรพากร)</span>
+                                        <span class="text-xs text-indigo-600 font-medium" id="totalAnnualDeductionPreview">รวมสิทธิ์ลดหย่อนทั้งหมด 70,500 บาท/ปี</span>
+                                    </div>
+                                </div>
+                                <span class="text-xs font-semibold text-indigo-600 flex items-center space-x-1 shrink-0">
+                                    <span id="dedPanelToggleText">แสดงรายการ</span>
+                                    <i id="dedPanelToggleIcon" class="fa-solid fa-chevron-down text-[10px] transition-transform"></i>
+                                </span>
+                            </button>
+
+                            <div id="taxDeduction2569Body" class="hidden border-t border-slate-200 p-4 space-y-3 bg-slate-50/60">
+                                <!-- ปุ่มแท็บย่อย 4 หมวด -->
+                                <div class="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+                                    <button type="button" onclick="switchDedCategory('family')" id="cat-btn-family" class="px-2.5 py-2 rounded-xl text-xs font-semibold bg-amber-500 text-white shadow-sm transition text-center">
+                                        1. ส่วนตัว/ครอบครัว
+                                    </button>
+                                    <button type="button" onclick="switchDedCategory('invest')" id="cat-btn-invest" class="px-2.5 py-2 rounded-xl text-xs font-semibold bg-white text-slate-600 hover:bg-amber-50 border border-slate-200 transition text-center">
+                                        2. ประกันและการลงทุน
+                                    </button>
+                                    <button type="button" onclick="switchDedCategory('stimulus')" id="cat-btn-stimulus" class="px-2.5 py-2 rounded-xl text-xs font-semibold bg-white text-slate-600 hover:bg-amber-50 border border-slate-200 transition text-center">
+                                        3. กระตุ้นเศรษฐกิจ
+                                    </button>
+                                    <button type="button" onclick="switchDedCategory('donation')" id="cat-btn-donation" class="px-2.5 py-2 rounded-xl text-xs font-semibold bg-white text-slate-600 hover:bg-amber-50 border border-slate-200 transition text-center">
+                                        4. เงินบริจาค
+                                    </button>
+                                </div>
+
+                                <!-- หมวดที่ 1: ส่วนตัว/ครอบครัว -->
+                                <div id="ded-cat-family" class="ded-cat-panel active space-y-2 text-xs">
+                                    <div class="font-bold text-amber-800 bg-amber-50 px-3 py-1.5 rounded-xl border border-amber-200/80">หมวด 1: ลดหย่อนส่วนตัวและครอบครัว</div>
+
+                                    <div class="flex items-center justify-between bg-white p-2.5 rounded-xl border border-slate-200">
+                                        <label class="inline-flex items-center space-x-2">
+                                            <input type="checkbox" checked disabled class="w-4 h-4 text-indigo-600 rounded border-slate-300">
+                                            <span class="font-medium text-slate-700">ส่วนตัว <span class="text-slate-400 font-normal">(สิทธิ์พื้นฐานทุกคน)</span></span>
+                                        </label>
+                                        <span class="font-bold text-indigo-700">60,000 บาท</span>
+                                    </div>
+
+                                    <div class="flex items-center justify-between bg-white p-2.5 rounded-xl border border-slate-200">
+                                        <label class="inline-flex items-center space-x-2 cursor-pointer">
+                                            <input type="checkbox" id="ded_spouse" onchange="calculateSingle()" class="w-4 h-4 text-indigo-600 rounded border-slate-300">
+                                            <span class="font-medium text-slate-700">คู่สมรส <span class="text-slate-400 font-normal">(ไม่มีรายได้)</span></span>
+                                        </label>
+                                        <span id="val_ded_spouse" class="font-semibold text-slate-500">0 / 60,000 บ.</span>
+                                    </div>
+
+                                    <div class="flex flex-wrap items-center justify-between gap-2 bg-white p-2.5 rounded-xl border border-slate-200">
+                                        <label class="inline-flex items-center space-x-2 cursor-pointer">
+                                            <input type="checkbox" id="ded_child1_chk" onchange="toggleInlineInput('ded_child1_chk','ded_child1_qty',1); calculateSingle()" class="w-4 h-4 text-indigo-600 rounded border-slate-300">
+                                            <span class="font-medium text-slate-700">บุตรทั่วไป <span class="text-slate-400 font-normal">(คนละ 30,000 บ.)</span></span>
+                                        </label>
+                                        <div class="flex items-center space-x-2">
+                                            <input type="number" id="ded_child1_qty" value="0" min="0" max="10" step="1" placeholder="คน" oninput="syncChkFromInput('ded_child1_chk','ded_child1_qty'); calculateSingle()" class="w-16 px-2 py-1 rounded-lg border border-slate-300 text-right text-xs">
+                                            <span class="text-slate-400">คน</span>
+                                            <span id="val_ded_child1" class="font-semibold text-indigo-600 w-20 text-right">0 บ.</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="flex flex-wrap items-center justify-between gap-2 bg-white p-2.5 rounded-xl border border-slate-200">
+                                        <label class="inline-flex items-center space-x-2 cursor-pointer">
+                                            <input type="checkbox" id="ded_child2_chk" onchange="toggleInlineInput('ded_child2_chk','ded_child2_qty',1); calculateSingle()" class="w-4 h-4 text-indigo-600 rounded border-slate-300">
+                                            <span class="font-medium text-slate-700">บุตรคนที่ 2+ เกิดตั้งแต่ปี 2561 <span class="text-slate-400 font-normal">(คนละ 60,000 บ.)</span></span>
+                                        </label>
+                                        <div class="flex items-center space-x-2">
+                                            <input type="number" id="ded_child2_qty" value="0" min="0" max="10" step="1" placeholder="คน" oninput="syncChkFromInput('ded_child2_chk','ded_child2_qty'); calculateSingle()" class="w-16 px-2 py-1 rounded-lg border border-slate-300 text-right text-xs">
+                                            <span class="text-slate-400">คน</span>
+                                            <span id="val_ded_child2" class="font-semibold text-indigo-600 w-20 text-right">0 บ.</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="flex flex-wrap items-center justify-between gap-2 bg-white p-2.5 rounded-xl border border-slate-200">
+                                        <label class="inline-flex items-center space-x-2 cursor-pointer">
+                                            <input type="checkbox" id="ded_maternity_chk" onchange="toggleInlineInput('ded_maternity_chk','ded_maternity_amt',60000); calculateSingle()" class="w-4 h-4 text-indigo-600 rounded border-slate-300">
+                                            <span class="font-medium text-slate-700">ค่าคลอดบุตร <span class="text-slate-400 font-normal">(สูงสุด 60,000 บ.)</span></span>
+                                        </label>
+                                        <div class="flex items-center space-x-2">
+                                            <input type="number" id="ded_maternity_amt" value="0" min="0" step="any" placeholder="บาท" oninput="syncChkFromInput('ded_maternity_chk','ded_maternity_amt'); calculateSingle()" class="w-24 px-2 py-1 rounded-lg border border-slate-300 text-right text-xs">
+                                            <span id="val_ded_maternity" class="font-semibold text-indigo-600 w-20 text-right">0 บ.</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="flex flex-wrap items-center justify-between gap-2 bg-white p-2.5 rounded-xl border border-slate-200">
+                                        <label class="inline-flex items-center space-x-2 cursor-pointer">
+                                            <input type="checkbox" id="ded_parents_chk" onchange="toggleInlineInput('ded_parents_chk','ded_parents_qty',1); calculateSingle()" class="w-4 h-4 text-indigo-600 rounded border-slate-300">
+                                            <span class="font-medium text-slate-700">เลี้ยงดูพ่อแม่ <span class="text-slate-400 font-normal">(คนละ 30,000 บ. สูงสุด 4 คน)</span></span>
+                                        </label>
+                                        <div class="flex items-center space-x-2">
+                                            <input type="number" id="ded_parents_qty" value="0" min="0" max="4" step="1" placeholder="คน" oninput="syncChkFromInput('ded_parents_chk','ded_parents_qty'); calculateSingle()" class="w-16 px-2 py-1 rounded-lg border border-slate-300 text-right text-xs">
+                                            <span class="text-slate-400">คน</span>
+                                            <span id="val_ded_parents" class="font-semibold text-indigo-600 w-20 text-right">0 บ.</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="flex flex-wrap items-center justify-between gap-2 bg-white p-2.5 rounded-xl border border-slate-200">
+                                        <label class="inline-flex items-center space-x-2 cursor-pointer">
+                                            <input type="checkbox" id="ded_disabled_chk" onchange="toggleInlineInput('ded_disabled_chk','ded_disabled_qty',1); calculateSingle()" class="w-4 h-4 text-indigo-600 rounded border-slate-300">
+                                            <span class="font-medium text-slate-700">เลี้ยงดูผู้พิการ/ทุพพลภาพ <span class="text-slate-400 font-normal">(คนละ 60,000 บ.)</span></span>
+                                        </label>
+                                        <div class="flex items-center space-x-2">
+                                            <input type="number" id="ded_disabled_qty" value="0" min="0" max="10" step="1" placeholder="คน" oninput="syncChkFromInput('ded_disabled_chk','ded_disabled_qty'); calculateSingle()" class="w-16 px-2 py-1 rounded-lg border border-slate-300 text-right text-xs">
+                                            <span class="text-slate-400">คน</span>
+                                            <span id="val_ded_disabled" class="font-semibold text-indigo-600 w-20 text-right">0 บ.</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- หมวดที่ 2: ประกันและการลงทุน -->
+                                <div id="ded-cat-invest" class="ded-cat-panel space-y-2 text-xs">
+                                    <div class="font-bold text-amber-800 bg-amber-50 px-3 py-1.5 rounded-xl border border-amber-200/80">หมวด 2: ประกันชีวิตและการลงทุน</div>
+
+                                    <!-- เพดานรวมประกันชีวิต + ประกันสุขภาพตัวเอง 100,000 บาท -->
+                                    <div class="bg-amber-50/50 p-2.5 rounded-xl border border-dashed border-amber-300 space-y-2">
+                                        <div class="flex justify-between items-center text-[11px] font-semibold text-amber-900">
+                                            <span>ประกันชีวิต + ประกันสุขภาพตัวเอง (รวมไม่เกิน 100,000 บ.)</span>
+                                            <span id="val_cap_life_health" class="text-indigo-700">ใช้สิทธิ์ 0 / 100,000 บ.</span>
+                                        </div>
+                                        <div class="flex flex-wrap items-center justify-between gap-2 bg-white p-2 rounded-xl border border-slate-200">
+                                            <label class="inline-flex items-center space-x-2 cursor-pointer">
+                                                <input type="checkbox" id="ded_life_chk" onchange="toggleInlineInput('ded_life_chk','ded_life_amt',20000); calculateSingle()" class="w-4 h-4 text-indigo-600 rounded border-slate-300">
+                                                <span class="font-medium text-slate-700">ประกันชีวิต / สะสมทรัพย์ <span class="text-slate-400 font-normal">(สูงสุด 100,000 บ.)</span></span>
+                                            </label>
+                                            <div class="flex items-center space-x-1.5">
+                                                <input type="number" id="ded_life_amt" value="0" min="0" step="any" placeholder="บาท" oninput="syncChkFromInput('ded_life_chk','ded_life_amt'); calculateSingle()" class="w-24 px-2 py-1 rounded-lg border border-slate-300 text-right text-xs">
+                                                <span class="text-slate-400">บ.</span>
+                                            </div>
+                                        </div>
+                                        <div class="flex flex-wrap items-center justify-between gap-2 bg-white p-2 rounded-xl border border-slate-200">
+                                            <label class="inline-flex items-center space-x-2 cursor-pointer">
+                                                <input type="checkbox" id="ded_health_chk" onchange="toggleInlineInput('ded_health_chk','ded_health_amt',15000); calculateSingle()" class="w-4 h-4 text-indigo-600 rounded border-slate-300">
+                                                <span class="font-medium text-slate-700">ประกันสุขภาพตัวเอง <span class="text-slate-400 font-normal">(สูงสุด 25,000 บ.)</span></span>
+                                            </label>
+                                            <div class="flex items-center space-x-1.5">
+                                                <input type="number" id="ded_health_amt" value="0" min="0" step="any" placeholder="บาท" oninput="syncChkFromInput('ded_health_chk','ded_health_amt'); calculateSingle()" class="w-24 px-2 py-1 rounded-lg border border-slate-300 text-right text-xs">
+                                                <span class="text-slate-400">บ.</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="flex flex-wrap items-center justify-between gap-2 bg-white p-2.5 rounded-xl border border-slate-200">
+                                        <label class="inline-flex items-center space-x-2 cursor-pointer">
+                                            <input type="checkbox" id="ded_parent_health_chk" onchange="toggleInlineInput('ded_parent_health_chk','ded_parent_health_amt',15000); calculateSingle()" class="w-4 h-4 text-indigo-600 rounded border-slate-300">
+                                            <span class="font-medium text-slate-700">ประกันสุขภาพพ่อแม่ <span class="text-slate-400 font-normal">(สูงสุด 15,000 บ.)</span></span>
+                                        </label>
+                                        <div class="flex items-center space-x-2">
+                                            <input type="number" id="ded_parent_health_amt" value="0" min="0" step="any" placeholder="บาท" oninput="syncChkFromInput('ded_parent_health_chk','ded_parent_health_amt'); calculateSingle()" class="w-24 px-2 py-1 rounded-lg border border-slate-300 text-right text-xs">
+                                            <span id="val_ded_parent_health" class="font-semibold text-indigo-600 w-20 text-right">0 บ.</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="flex flex-wrap items-center justify-between gap-2 bg-white p-2.5 rounded-xl border border-slate-200">
+                                        <label class="inline-flex items-center space-x-2 cursor-pointer">
+                                            <input type="checkbox" id="ded_spouse_life_chk" onchange="toggleInlineInput('ded_spouse_life_chk','ded_spouse_life_amt',10000); calculateSingle()" class="w-4 h-4 text-indigo-600 rounded border-slate-300">
+                                            <span class="font-medium text-slate-700">ประกันชีวิตคู่สมรส <span class="text-slate-400 font-normal">(สูงสุด 10,000 บ.)</span></span>
+                                        </label>
+                                        <div class="flex items-center space-x-2">
+                                            <input type="number" id="ded_spouse_life_amt" value="0" min="0" step="any" placeholder="บาท" oninput="syncChkFromInput('ded_spouse_life_chk','ded_spouse_life_amt'); calculateSingle()" class="w-24 px-2 py-1 rounded-lg border border-slate-300 text-right text-xs">
+                                            <span id="val_ded_spouse_life" class="font-semibold text-indigo-600 w-20 text-right">0 บ.</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="flex items-center justify-between bg-white p-2.5 rounded-xl border border-slate-200">
+                                        <span class="font-medium text-slate-700">ประกันสังคมทั้งปี <span class="text-slate-400 font-normal">(ซิงก์จากด้านบน สูงสุด 10,500 บ./ปี)</span></span>
+                                        <span id="val_ded_sso_annual" class="font-bold text-indigo-700">10,500 บ.</span>
+                                    </div>
+
+                                    <div class="flex flex-wrap items-center justify-between gap-2 bg-white p-2.5 rounded-xl border border-slate-200">
+                                        <label class="inline-flex items-center space-x-2 cursor-pointer">
+                                            <input type="checkbox" id="ded_thaiesg_chk" onchange="toggleInlineInput('ded_thaiesg_chk','ded_thaiesg_amt',30000); calculateSingle()" class="w-4 h-4 text-indigo-600 rounded border-slate-300">
+                                            <span class="font-medium text-slate-700">ThaiESG / ThaiESGX ใหม่ <span class="text-slate-400 font-normal">(30% ไม่เกิน 300,000 บ.)</span></span>
+                                        </label>
+                                        <div class="flex items-center space-x-2">
+                                            <input type="number" id="ded_thaiesg_amt" value="0" min="0" step="any" placeholder="บาท" oninput="syncChkFromInput('ded_thaiesg_chk','ded_thaiesg_amt'); calculateSingle()" class="w-24 px-2 py-1 rounded-lg border border-slate-300 text-right text-xs">
+                                            <span id="val_ded_thaiesg" class="font-semibold text-indigo-600 w-20 text-right">0 บ.</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="flex flex-wrap items-center justify-between gap-2 bg-white p-2.5 rounded-xl border border-slate-200">
+                                        <label class="inline-flex items-center space-x-2 cursor-pointer">
+                                            <input type="checkbox" id="ded_thaiesgx_ltf_chk" onchange="toggleInlineInput('ded_thaiesgx_ltf_chk','ded_thaiesgx_ltf_amt',50000); calculateSingle()" class="w-4 h-4 text-indigo-600 rounded border-slate-300">
+                                            <span class="font-medium text-slate-700">ThaiESGX สับเปลี่ยน LTF <span class="text-slate-400 font-normal">(สูงสุด 50,000 บ.)</span></span>
+                                        </label>
+                                        <div class="flex items-center space-x-2">
+                                            <input type="number" id="ded_thaiesgx_ltf_amt" value="0" min="0" step="any" placeholder="บาท" oninput="syncChkFromInput('ded_thaiesgx_ltf_chk','ded_thaiesgx_ltf_amt'); calculateSingle()" class="w-24 px-2 py-1 rounded-lg border border-slate-300 text-right text-xs">
+                                            <span id="val_ded_thaiesgx_ltf" class="font-semibold text-indigo-600 w-20 text-right">0 บ.</span>
+                                        </div>
+                                    </div>
+
+                                    <!-- กลุ่มเกษียณรวมเพดาน 500,000 บาท -->
+                                    <div class="bg-amber-50/50 p-2.5 rounded-xl border border-dashed border-amber-300 space-y-2">
+                                        <div class="flex justify-between items-center text-[11px] font-semibold text-amber-900">
+                                            <span>กลุ่มกองทุนเพื่อการเกษียณ (รวมไม่เกิน 500,000 บ.)</span>
+                                            <span id="val_cap_retirement" class="text-indigo-700">ใช้สิทธิ์ 0 / 500,000 บ.</span>
+                                        </div>
+
+                                        <div class="flex flex-wrap items-center justify-between gap-2 bg-white p-2 rounded-xl border border-slate-200">
+                                            <label class="inline-flex items-center space-x-2 cursor-pointer">
+                                                <input type="checkbox" id="ded_rmf_chk" onchange="toggleInlineInput('ded_rmf_chk','ded_rmf_amt',30000); calculateSingle()" class="w-4 h-4 text-indigo-600 rounded border-slate-300">
+                                                <span class="font-medium text-slate-700">กองทุน RMF <span class="text-slate-400 font-normal">(30% ไม่เกิน 500,000 บ.)</span></span>
+                                            </label>
+                                            <div class="flex items-center space-x-1.5">
+                                                <input type="number" id="ded_rmf_amt" value="0" min="0" step="any" placeholder="บาท" oninput="syncChkFromInput('ded_rmf_chk','ded_rmf_amt'); calculateSingle()" class="w-24 px-2 py-1 rounded-lg border border-slate-300 text-right text-xs">
+                                                <span class="text-slate-400">บ.</span>
+                                            </div>
+                                        </div>
+
+                                        <div class="flex flex-wrap items-center justify-between gap-2 bg-white p-2 rounded-xl border border-slate-200">
+                                            <label class="inline-flex items-center space-x-2 cursor-pointer">
+                                                <input type="checkbox" id="ded_pvd_chk" onchange="toggleInlineInput('ded_pvd_chk','ded_pvd_amt',18000); calculateSingle()" class="w-4 h-4 text-indigo-600 rounded border-slate-300">
+                                                <span class="font-medium text-slate-700">กองทุนสำรองเลี้ยงชีพ PVD <span class="text-slate-400 font-normal">(15% ไม่เกิน 500,000 บ.)</span></span>
+                                            </label>
+                                            <div class="flex items-center space-x-1.5">
+                                                <input type="number" id="ded_pvd_amt" value="0" min="0" step="any" placeholder="บาท" oninput="syncChkFromInput('ded_pvd_chk','ded_pvd_amt'); calculateSingle()" class="w-24 px-2 py-1 rounded-lg border border-slate-300 text-right text-xs">
+                                                <span class="text-slate-400">บ.</span>
+                                            </div>
+                                        </div>
+
+                                        <div class="flex flex-wrap items-center justify-between gap-2 bg-white p-2 rounded-xl border border-slate-200">
+                                            <label class="inline-flex items-center space-x-2 cursor-pointer">
+                                                <input type="checkbox" id="ded_gpf_chk" onchange="toggleInlineInput('ded_gpf_chk','ded_gpf_amt',18000); calculateSingle()" class="w-4 h-4 text-indigo-600 rounded border-slate-300">
+                                                <span class="font-medium text-slate-700">กองทุนบำเหน็จบำนาญ กบข. <span class="text-slate-400 font-normal">(30% ไม่เกิน 500,000 บ.)</span></span>
+                                            </label>
+                                            <div class="flex items-center space-x-1.5">
+                                                <input type="number" id="ded_gpf_amt" value="0" min="0" step="any" placeholder="บาท" oninput="syncChkFromInput('ded_gpf_chk','ded_gpf_amt'); calculateSingle()" class="w-24 px-2 py-1 rounded-lg border border-slate-300 text-right text-xs">
+                                                <span class="text-slate-400">บ.</span>
+                                            </div>
+                                        </div>
+
+                                        <div class="flex flex-wrap items-center justify-between gap-2 bg-white p-2 rounded-xl border border-slate-200">
+                                            <label class="inline-flex items-center space-x-2 cursor-pointer">
+                                                <input type="checkbox" id="ded_teacher_chk" onchange="toggleInlineInput('ded_teacher_chk','ded_teacher_amt',15000); calculateSingle()" class="w-4 h-4 text-indigo-600 rounded border-slate-300">
+                                                <span class="font-medium text-slate-700">กองทุนสงเคราะห์ครูเอกชน <span class="text-slate-400 font-normal">(สูงสุด 500,000 บ.)</span></span>
+                                            </label>
+                                            <div class="flex items-center space-x-1.5">
+                                                <input type="number" id="ded_teacher_amt" value="0" min="0" step="any" placeholder="บาท" oninput="syncChkFromInput('ded_teacher_chk','ded_teacher_amt'); calculateSingle()" class="w-24 px-2 py-1 rounded-lg border border-slate-300 text-right text-xs">
+                                                <span class="text-slate-400">บ.</span>
+                                            </div>
+                                        </div>
+
+                                        <div class="flex flex-wrap items-center justify-between gap-2 bg-white p-2 rounded-xl border border-slate-200">
+                                            <label class="inline-flex items-center space-x-2 cursor-pointer">
+                                                <input type="checkbox" id="ded_annuity_chk" onchange="toggleInlineInput('ded_annuity_chk','ded_annuity_amt',20000); calculateSingle()" class="w-4 h-4 text-indigo-600 rounded border-slate-300">
+                                                <span class="font-medium text-slate-700">ประกันบำนาญ <span class="text-slate-400 font-normal">(15% ไม่เกิน 200,000 บ.)</span></span>
+                                            </label>
+                                            <div class="flex items-center space-x-1.5">
+                                                <input type="number" id="ded_annuity_amt" value="0" min="0" step="any" placeholder="บาท" oninput="syncChkFromInput('ded_annuity_chk','ded_annuity_amt'); calculateSingle()" class="w-24 px-2 py-1 rounded-lg border border-slate-300 text-right text-xs">
+                                                <span class="text-slate-400">บ.</span>
+                                            </div>
+                                        </div>
+
+                                        <div class="flex flex-wrap items-center justify-between gap-2 bg-white p-2 rounded-xl border border-slate-200">
+                                            <label class="inline-flex items-center space-x-2 cursor-pointer">
+                                                <input type="checkbox" id="ded_nsf_chk" onchange="toggleInlineInput('ded_nsf_chk','ded_nsf_amt',13200); calculateSingle()" class="w-4 h-4 text-indigo-600 rounded border-slate-300">
+                                                <span class="font-medium text-slate-700">กองทุนการออมแห่งชาติ กอช. <span class="text-slate-400 font-normal">(สูงสุด 30,000 บ.)</span></span>
+                                            </label>
+                                            <div class="flex items-center space-x-1.5">
+                                                <input type="number" id="ded_nsf_amt" value="0" min="0" step="any" placeholder="บาท" oninput="syncChkFromInput('ded_nsf_chk','ded_nsf_amt'); calculateSingle()" class="w-24 px-2 py-1 rounded-lg border border-slate-300 text-right text-xs">
+                                                <span class="text-slate-400">บ.</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- หมวดที่ 3: กระตุ้นเศรษฐกิจ -->
+                                <div id="ded-cat-stimulus" class="ded-cat-panel space-y-2 text-xs">
+                                    <div class="font-bold text-amber-800 bg-amber-50 px-3 py-1.5 rounded-xl border border-amber-200/80">หมวด 3: มาตรการกระตุ้นเศรษฐกิจ</div>
+
+                                    <div class="flex flex-wrap items-center justify-between gap-2 bg-white p-2.5 rounded-xl border border-slate-200">
+                                        <label class="inline-flex items-center space-x-2 cursor-pointer">
+                                            <input type="checkbox" id="ded_home_interest_chk" onchange="toggleInlineInput('ded_home_interest_chk','ded_home_interest_amt',50000); calculateSingle()" class="w-4 h-4 text-indigo-600 rounded border-slate-300">
+                                            <span class="font-medium text-slate-700">ดอกเบี้ยที่อยู่อาศัย <span class="text-slate-400 font-normal">(สูงสุด 100,000 บ.)</span></span>
+                                        </label>
+                                        <div class="flex items-center space-x-2">
+                                            <input type="number" id="ded_home_interest_amt" value="0" min="0" step="any" placeholder="บาท" oninput="syncChkFromInput('ded_home_interest_chk','ded_home_interest_amt'); calculateSingle()" class="w-24 px-2 py-1 rounded-lg border border-slate-300 text-right text-xs">
+                                            <span id="val_ded_home_interest" class="font-semibold text-indigo-600 w-20 text-right">0 บ.</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="flex flex-wrap items-center justify-between gap-2 bg-white p-2.5 rounded-xl border border-slate-200">
+                                        <label class="inline-flex items-center space-x-2 cursor-pointer">
+                                            <input type="checkbox" id="ded_art_chk" onchange="toggleInlineInput('ded_art_chk','ded_art_amt',20000); calculateSingle()" class="w-4 h-4 text-indigo-600 rounded border-slate-300">
+                                            <span class="font-medium text-slate-700">ซื้องานศิลปะ <span class="text-slate-400 font-normal">(สูงสุด 100,000 บ.)</span></span>
+                                        </label>
+                                        <div class="flex items-center space-x-2">
+                                            <input type="number" id="ded_art_amt" value="0" min="0" step="any" placeholder="บาท" oninput="syncChkFromInput('ded_art_chk','ded_art_amt'); calculateSingle()" class="w-24 px-2 py-1 rounded-lg border border-slate-300 text-right text-xs">
+                                            <span id="val_ded_art" class="font-semibold text-indigo-600 w-20 text-right">0 บ.</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="flex flex-wrap items-center justify-between gap-2 bg-white p-2.5 rounded-xl border border-slate-200">
+                                        <label class="inline-flex items-center space-x-2 cursor-pointer">
+                                            <input type="checkbox" id="ded_se_chk" onchange="toggleInlineInput('ded_se_chk','ded_se_amt',20000); calculateSingle()" class="w-4 h-4 text-indigo-600 rounded border-slate-300">
+                                            <span class="font-medium text-slate-700">วิสาหกิจเพื่อสังคม (Social Enterprise) <span class="text-slate-400 font-normal">(สูงสุด 100,000 บ.)</span></span>
+                                        </label>
+                                        <div class="flex items-center space-x-2">
+                                            <input type="number" id="ded_se_amt" value="0" min="0" step="any" placeholder="บาท" oninput="syncChkFromInput('ded_se_chk','ded_se_amt'); calculateSingle()" class="w-24 px-2 py-1 rounded-lg border border-slate-300 text-right text-xs">
+                                            <span id="val_ded_se" class="font-semibold text-indigo-600 w-20 text-right">0 บ.</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="flex flex-wrap items-center justify-between gap-2 bg-white p-2.5 rounded-xl border border-slate-200">
+                                        <label class="inline-flex items-center space-x-2 cursor-pointer">
+                                            <input type="checkbox" id="ded_cctv_chk" onchange="toggleInlineInput('ded_cctv_chk','ded_cctv_amt',10000); calculateSingle()" class="w-4 h-4 text-indigo-600 rounded border-slate-300">
+                                            <span class="font-medium text-slate-700">กล้อง CCTV เขตพัฒนาพิเศษ <span class="text-slate-400 font-normal">(ตามจ่ายจริง)</span></span>
+                                        </label>
+                                        <div class="flex items-center space-x-2">
+                                            <input type="number" id="ded_cctv_amt" value="0" min="0" step="any" placeholder="บาท" oninput="syncChkFromInput('ded_cctv_chk','ded_cctv_amt'); calculateSingle()" class="w-24 px-2 py-1 rounded-lg border border-slate-300 text-right text-xs">
+                                            <span id="val_ded_cctv" class="font-semibold text-indigo-600 w-20 text-right">0 บ.</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="flex flex-wrap items-center justify-between gap-2 bg-white p-2.5 rounded-xl border border-slate-200">
+                                        <label class="inline-flex items-center space-x-2 cursor-pointer">
+                                            <input type="checkbox" id="ded_solar_chk" onchange="toggleInlineInput('ded_solar_chk','ded_solar_amt',100000); calculateSingle()" class="w-4 h-4 text-indigo-600 rounded border-slate-300">
+                                            <span class="font-medium text-slate-700">ติดตั้ง Solar Rooftop <span class="text-slate-400 font-normal">(สูงสุด 200,000 บ.)</span></span>
+                                        </label>
+                                        <div class="flex items-center space-x-2">
+                                            <input type="number" id="ded_solar_amt" value="0" min="0" step="any" placeholder="บาท" oninput="syncChkFromInput('ded_solar_chk','ded_solar_amt'); calculateSingle()" class="w-24 px-2 py-1 rounded-lg border border-slate-300 text-right text-xs">
+                                            <span id="val_ded_solar" class="font-semibold text-indigo-600 w-20 text-right">0 บ.</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- หมวดที่ 4: เงินบริจาค -->
+                                <div id="ded-cat-donation" class="ded-cat-panel space-y-2 text-xs">
+                                    <div class="font-bold text-amber-800 bg-amber-50 px-3 py-1.5 rounded-xl border border-amber-200/80">หมวด 4: เงินบริจาค</div>
+
+                                    <div class="flex flex-wrap items-center justify-between gap-2 bg-white p-2.5 rounded-xl border border-slate-200">
+                                        <label class="inline-flex items-center space-x-2 cursor-pointer">
+                                            <input type="checkbox" id="ded_party_chk" onchange="toggleInlineInput('ded_party_chk','ded_party_amt',5000); calculateSingle()" class="w-4 h-4 text-indigo-600 rounded border-slate-300">
+                                            <span class="font-medium text-slate-700">บริจาคพรรคการเมือง <span class="text-slate-400 font-normal">(สูงสุด 10,000 บ.)</span></span>
+                                        </label>
+                                        <div class="flex items-center space-x-2">
+                                            <input type="number" id="ded_party_amt" value="0" min="0" step="any" placeholder="บาท" oninput="syncChkFromInput('ded_party_chk','ded_party_amt'); calculateSingle()" class="w-24 px-2 py-1 rounded-lg border border-slate-300 text-right text-xs">
+                                            <span id="val_ded_party" class="font-semibold text-indigo-600 w-20 text-right">0 บ.</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="flex flex-wrap items-center justify-between gap-2 bg-white p-2.5 rounded-xl border border-slate-200">
+                                        <label class="inline-flex items-center space-x-2 cursor-pointer">
+                                            <input type="checkbox" id="ded_edu2x_chk" onchange="toggleInlineInput('ded_edu2x_chk','ded_edu2x_amt',5000); calculateSingle()" class="w-4 h-4 text-indigo-600 rounded border-slate-300">
+                                            <span class="font-medium text-slate-700">การศึกษา กีฬา สังคม ร.พ.รัฐ <span class="text-slate-400 font-normal">(ลดหย่อน 2 เท่า สูงสุด 10%)</span></span>
+                                        </label>
+                                        <div class="flex items-center space-x-2">
+                                            <input type="number" id="ded_edu2x_amt" value="0" min="0" step="any" placeholder="ยอดบริจาค" oninput="syncChkFromInput('ded_edu2x_chk','ded_edu2x_amt'); calculateSingle()" class="w-24 px-2 py-1 rounded-lg border border-slate-300 text-right text-xs">
+                                            <span id="val_ded_edu2x" class="font-semibold text-indigo-600 w-20 text-right">0 บ.</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="flex flex-wrap items-center justify-between gap-2 bg-white p-2.5 rounded-xl border border-slate-200">
+                                        <label class="inline-flex items-center space-x-2 cursor-pointer">
+                                            <input type="checkbox" id="ded_general_don_chk" onchange="toggleInlineInput('ded_general_don_chk','ded_general_don_amt',5000); calculateSingle()" class="w-4 h-4 text-indigo-600 rounded border-slate-300">
+                                            <span class="font-medium text-slate-700">เงินบริจาคทั่วไป <span class="text-slate-400 font-normal">(ตามจ่ายจริง สูงสุด 10%)</span></span>
+                                        </label>
+                                        <div class="flex items-center space-x-2">
+                                            <input type="number" id="ded_general_don_amt" value="0" min="0" step="any" placeholder="บาท" oninput="syncChkFromInput('ded_general_don_chk','ded_general_don_amt'); calculateSingle()" class="w-24 px-2 py-1 rounded-lg border border-slate-300 text-right text-xs">
+                                            <span id="val_ded_general_don" class="font-semibold text-indigo-600 w-20 text-right">0 บ.</span>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- คอลัมน์ขวา: กล่องสรุปผลการคำนวณ (Sticky) -->
+                <div class="lg:col-span-5 lg:sticky lg:top-6 bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white p-6 rounded-2xl shadow-xl border border-indigo-900/60 flex flex-col justify-between space-y-5">
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-center pb-4 border-b border-indigo-800/60">
+                            <div>
+                                <h3 class="text-base font-bold text-white">สรุปผลการคำนวณ</h3>
+                                <p class="text-xs text-indigo-300" id="resName">น.ส. ปนัดดา ใจดี</p>
+                            </div>
+                            <div class="flex flex-col items-end gap-1.5">
+                                <span id="resEmpTypeTag" class="px-3 py-1 bg-indigo-500/30 text-indigo-200 text-xs rounded-full font-medium border border-indigo-400/30">พนักงานรายเดือน</span>
+                                <span id="resOtComplianceBadge" class="px-2.5 py-0.5 bg-emerald-500/20 text-emerald-300 text-[11px] rounded-full font-medium border border-emerald-400/30">OT ปกติ (6/154 ชม.)</span>
+                            </div>
+                        </div>
+
+                        <div class="space-y-2.5 text-sm">
                             <div class="flex justify-between">
                                 <span class="text-slate-400">ฐานค่าจ้างในการคำนวณ OT:</span>
-                                <span id="resBaseRate" class="font-medium text-white">0.00 บาท</span>
+                                <span id="resBaseRate" class="font-medium text-white">25,000.00 บาท</span>
                             </div>
                             <div class="flex justify-between">
                                 <span class="text-slate-400">ค่าจ้างตามงวดงาน:</span>
-                                <span id="resBasePay" class="font-medium text-white">0.00 บาท</span>
+                                <span id="resBasePay" class="font-medium text-white">25,000.00 บาท</span>
                             </div>
 
-                            <!-- ส่วนแจกแจงรายละเอียด OT รายเรท -->
-                            <div class="bg-indigo-900/30 p-2.5 rounded-xl border border-indigo-800/50 space-y-1 text-xs">
-                                <div class="font-medium text-indigo-300 mb-1">รายละเอียดค่า OT:</div>
-                                <div class="flex justify-between text-slate-300">
-                                    <span>• OT 1.5 (<span id="txtOt15">0</span> ชม.):</span>
-                                    <span id="resPay15" class="text-amber-300">0.00 บาท</span>
+                            <!-- OT รวมพร้อมปุ่มขยาย/ซ่อนรายละเอียด -->
+                            <div class="border-t border-indigo-900/60 pt-2">
+                                <div class="flex justify-between items-center cursor-pointer select-none" onclick="toggleAccordion('otBreakdownDetails')">
+                                    <span class="text-slate-300 flex items-center space-x-1.5">
+                                        <span>ค่าล่วงเวลา (OT รวม):</span>
+                                        <i id="icon-otBreakdownDetails" class="fa-solid fa-chevron-down text-[10px] text-amber-300 transition-transform" style="transform: rotate(180deg);"></i>
+                                    </span>
+                                    <span id="resTotalOT" class="font-bold text-amber-400">937.50 บาท</span>
                                 </div>
-                                <div class="flex justify-between text-slate-300">
-                                    <span>• OT 2.0 (<span id="txtOt20">0</span> ชม.):</span>
-                                    <span id="resPay20" class="text-amber-300">0.00 บาท</span>
+                                <div id="otBreakdownDetails" class="pl-3 mt-1.5 space-y-1 text-xs text-slate-300 border-l-2 border-amber-400/50 bg-indigo-900/30 p-2 rounded-r-xl">
+                                    <div class="flex justify-between">
+                                        <span>• OT 1.5 (<span id="txtOt15">6</span> ชม.):</span>
+                                        <span id="resPay15" class="text-amber-300">937.50 บาท</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span>• OT 2.0 (<span id="txtOt20">0</span> ชม.):</span>
+                                        <span id="resPay20" class="text-amber-300">0.00 บาท</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span>• OT 3.0 (<span id="txtOt30">0</span> ชม.):</span>
+                                        <span id="resPay30" class="text-amber-300">0.00 บาท</span>
+                                    </div>
                                 </div>
-                                <div class="flex justify-between text-slate-300">
-                                    <span>• OT 3.0 (<span id="txtOt30">0</span> ชม.):</span>
-                                    <span id="resPay30" class="text-amber-300">0.00 บาท</span>
-                                </div>
-                            </div>
-
-                            <div class="flex justify-between">
-                                <span class="text-slate-400">ค่าล่วงเวลา (OT รวม):</span>
-                                <span id="resTotalOT" class="font-medium text-amber-400">0.00 บาท</span>
                             </div>
 
                             <!-- รายได้อื่นๆ พร้อมปุ่มขยาย/ซ่อนรายละเอียด -->
                             <div class="border-t border-indigo-900/60 pt-2">
                                 <div class="flex justify-between items-center cursor-pointer select-none" onclick="toggleAccordion('otherDetails')">
-                                    <span class="text-slate-400 flex items-center space-x-1.5">
+                                    <span class="text-slate-300 flex items-center space-x-1.5">
                                         <span>รายได้อื่นๆ:</span>
-                                        <i id="icon-otherDetails" class="fa-solid fa-chevron-down text-[10px] transition-transform"></i>
+                                        <i id="icon-otherDetails" class="fa-solid fa-chevron-down text-[10px] text-emerald-300 transition-transform"></i>
                                     </span>
-                                    <span id="resOther" class="font-medium text-emerald-400">0.00 บาท</span>
+                                    <span id="resOther" class="font-semibold text-emerald-400">1,500.00 บาท</span>
                                 </div>
-                                <div id="otherDetails" class="hidden pl-3 mt-1.5 space-y-1 text-xs text-slate-300 border-l-2 border-emerald-500/40">
-                                    <!-- Dynamic list inserted via JS -->
-                                </div>
+                                <div id="otherDetails" class="hidden pl-3 mt-1.5 space-y-1 text-xs text-slate-300 border-l-2 border-emerald-500/50"></div>
                             </div>
 
-                            <!-- หักอื่นๆ พร้อมปุ่มขยาย/ซ่อนรายละเอียด -->
+                            <!-- รายได้รวมทั้งสิ้น -->
+                            <div class="flex justify-between bg-white/5 px-3 py-2 rounded-xl border border-white/10 font-semibold">
+                                <span class="text-indigo-200">รวมรายได้ทั้งหมด (Gross Income):</span>
+                                <span id="resGrossIncome" class="text-white">27,437.50 บาท</span>
+                            </div>
+
+                            <!-- รายการหักรวม พร้อมปุ่มขยาย/ซ่อนรายละเอียด -->
                             <div class="border-t border-indigo-900/60 pt-2">
                                 <div class="flex justify-between items-center cursor-pointer select-none" onclick="toggleAccordion('deductionDetails')">
-                                    <span class="text-slate-400 flex items-center space-x-1.5">
+                                    <span class="text-slate-300 flex items-center space-x-1.5">
                                         <span>รายการหักรวม (ปกส./ภาษี/อื่นๆ):</span>
-                                        <i id="icon-deductionDetails" class="fa-solid fa-chevron-down text-[10px] transition-transform"></i>
+                                        <i id="icon-deductionDetails" class="fa-solid fa-chevron-down text-[10px] text-rose-300 transition-transform" style="transform: rotate(180deg);"></i>
                                     </span>
-                                    <span id="resDeduction" class="font-medium text-rose-400">0.00 บาท</span>
+                                    <span id="resDeduction" class="font-semibold text-rose-400">875.00 บาท</span>
                                 </div>
-                                <div id="deductionDetails" class="hidden pl-3 mt-1.5 space-y-1 text-xs text-slate-300 border-l-2 border-rose-500/40">
-                                    <!-- Dynamic list inserted via JS -->
-                                </div>
+                                <div id="deductionDetails" class="pl-3 mt-1.5 space-y-1 text-xs text-slate-300 border-l-2 border-rose-500/50"></div>
                             </div>
 
-                            <!-- รายละเอียดการคำนวณภาษีขั้นบันได (กดขยาย/ซ่อนได้) -->
+                            <!-- รายละเอียดภาษีขั้นบันได (ประมาณการรายปี) -->
                             <div class="border-t border-indigo-900/60 pt-2">
                                 <div class="flex justify-between items-center cursor-pointer select-none" onclick="toggleAccordion('taxBracketDetails')">
-                                    <span class="text-slate-400 flex items-center space-x-1.5">
+                                    <span class="text-slate-300 flex items-center space-x-1.5">
                                         <span>รายละเอียดภาษีขั้นบันได (ประมาณการรายปี):</span>
-                                        <i id="icon-taxBracketDetails" class="fa-solid fa-chevron-down text-[10px] transition-transform"></i>
+                                        <i id="icon-taxBracketDetails" class="fa-solid fa-chevron-down text-[10px] text-indigo-300 transition-transform"></i>
                                     </span>
                                     <span id="resMonthlyTaxSummary" class="font-medium text-indigo-300">0.00 บาท/ด.</span>
                                 </div>
-                                <div id="taxBracketDetails" class="hidden pl-3 mt-1.5 space-y-1.5 text-xs text-slate-300 border-l-2 border-indigo-400/50 bg-indigo-950/50 p-2.5 rounded-r-xl">
-                                    <!-- Progressive tax breakdown inserted via JS -->
-                                </div>
+                                <div id="taxBracketDetails" class="hidden pl-3 mt-1.5 space-y-1.5 text-xs text-slate-300 border-l-2 border-indigo-400/50 bg-indigo-950/60 p-3 rounded-r-xl"></div>
                             </div>
-                        </div>
-
-                        <div class="bg-white/5 p-4 rounded-xl border border-white/10 mt-5 text-xs text-indigo-200">
-                            <p class="font-semibold text-white mb-1"><i class="fa-solid fa-circle-info mr-1"></i> สูตรการคำนวณ OT ตามเงื่อนไข:</p>
-                            <p class="italic text-slate-300">อัตราต่อชั่วโมง = (ฐานเงินเดือนหรือเทียบเท่า) ÷ 30 ÷ 8</p>
-                            <p class="italic text-slate-300">ค่า OT = อัตราต่อชั่วโมง × จำนวนชั่วโมง OT × ตัวคูณ (1.5, 2, 3)</p>
                         </div>
                     </div>
 
-                    <div class="mt-6 pt-4 border-t border-indigo-800/60">
-                        <div class="flex justify-between items-end">
-                            <span class="text-sm font-medium text-indigo-300">ยอดเงินสุทธิที่ต้องจ่าย</span>
+                    <!-- ยอดสุทธิ + ปุ่มดูใบสลิปเงินเดือน -->
+                    <div class="pt-4 border-t border-indigo-800/60 space-y-4">
+                        <div class="bg-emerald-500/10 border border-emerald-400/30 p-4 rounded-2xl flex justify-between items-center">
+                            <div>
+                                <span class="text-xs font-semibold text-emerald-300 block">ยอดเงินสุทธิที่ต้องจ่าย</span>
+                                <span class="text-[11px] text-slate-300">หลังหักประกันสังคมและภาษี</span>
+                            </div>
                             <div class="text-right">
-                                <span id="resNetPay" class="text-3xl font-extrabold text-emerald-400">0.00</span>
-                                <span class="text-sm text-slate-300 ml-1">บาท</span>
+                                <span id="resNetPay" class="text-2xl sm:text-3xl font-extrabold text-emerald-400">26,562.50</span>
+                                <span class="text-xs text-slate-300 ml-1">บาท</span>
                             </div>
                         </div>
+
+                        <button type="button" onclick="openPayslipModalFromSingle()" class="w-full py-3 px-4 bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-xl text-xs font-semibold transition flex items-center justify-center space-x-2">
+                            <i class="fa-solid fa-file-invoice-dollar text-amber-300"></i>
+                            <span>ดูใบสลิปเงินเดือน / พิมพ์ (Payslip View)</span>
+                        </button>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- ================= แท็บที่ 2: นำเข้าไฟล์ Excel ================= -->
+        <!-- ================= แท็บที่ 2: นำเข้าไฟล์ Excel (คำนวณหลายคน) ================= -->
         <div id="tab-bulk" class="tab-content space-y-6">
-            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-                <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 pb-4 border-b border-slate-100 gap-4">
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-6">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center pb-4 border-b border-slate-100 gap-4">
                     <div>
                         <h2 class="text-lg font-bold text-slate-800 flex items-center space-x-2">
-                            <i class="fa-solid fa-file-arrow-up text-indigo-600"></i>
+                            <span class="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-sm"><i class="fa-solid fa-file-arrow-up"></i></span>
                             <span>นำเข้าข้อมูลพนักงานจากไฟล์ Excel หรือ CSV</span>
                         </h2>
-                        <p class="text-slate-500 text-sm mt-0.5">อัปโหลดไฟล์ที่มีรายชื่อและข้อมูลการทำงานเพื่อประมวลผลเงินเดือนพร้อมกัน</p>
+                        <p class="text-slate-500 text-sm mt-1">อัปโหลดไฟล์รายชื่อพนักงานเพื่อคำนวณเงินเดือน OT ประกันสังคม 2569 และภาษีขั้นบันไดพร้อมกันทั้งบริษัท</p>
                     </div>
-                    <div class="flex space-x-3">
-                        <button onclick="downloadTemplate()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-medium rounded-xl transition flex items-center space-x-2">
+                    <div class="flex flex-wrap gap-2">
+                        <button type="button" onclick="loadSampleIntoBulk()" class="px-4 py-2.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-xs sm:text-sm font-semibold rounded-xl transition flex items-center space-x-2">
+                            <i class="fa-solid fa-play"></i>
+                            <span>จำลองข้อมูลตัวอย่าง 5 คนทันที</span>
+                        </button>
+                        <button type="button" onclick="downloadTemplate()" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs sm:text-sm font-semibold rounded-xl transition flex items-center space-x-2">
                             <i class="fa-solid fa-download"></i>
-                            <span>ดาวน์โหลดไฟล์ตัวอย่าง</span>
+                            <span>ดาวน์โหลดไฟล์ตัวอย่าง (.xlsx)</span>
                         </button>
                     </div>
                 </div>
 
                 <!-- พื้นที่ลากวางไฟล์ -->
-                <div class="border-2 border-dashed border-indigo-200 hover:border-indigo-400 rounded-2xl p-8 text-center bg-indigo-50/30 transition cursor-pointer relative" onclick="document.getElementById('excelFile').click()">
+                <div id="dropZone" class="border-2 border-dashed border-indigo-200 hover:border-indigo-400 rounded-2xl p-8 text-center bg-indigo-50/30 transition cursor-pointer" onclick="document.getElementById('excelFile').click()">
                     <input type="file" id="excelFile" accept=".xlsx, .xls, .csv" class="hidden" onchange="handleFile(event)">
-                    <div class="w-16 h-16 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl shadow-inner">
+                    <div class="w-16 h-16 bg-indigo-100 text-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-4 text-2xl shadow-inner">
                         <i class="fa-solid fa-cloud-arrow-up"></i>
                     </div>
                     <h3 class="text-base font-semibold text-slate-700 mb-1">คลิกเพื่อเลือกไฟล์ หรือลากไฟล์มาวางที่นี่</h3>
@@ -321,38 +814,81 @@
                 </div>
 
                 <!-- คำแนะนำคอลัมน์ Excel -->
-                <div class="mt-6 bg-slate-50 p-4 rounded-xl border border-slate-200/80 text-xs text-slate-600">
-                    <span class="font-bold text-slate-700 block mb-1">รูปแบบคอลัมน์ในไฟล์ Excel ที่รองรับ:</span>
-                    <div class="grid grid-cols-2 sm:grid-cols-6 gap-2 mt-2">
-                        <div class="bg-white p-2 rounded border border-slate-200"><code>name</code> : ชื่อพนักงาน</div>
-                        <div class="bg-white p-2 rounded border border-slate-200"><code>type</code> : monthly / daily</div>
-                        <div class="bg-white p-2 rounded border border-slate-200"><code>salary_or_daily</code> : เงินเดือน/รายวัน</div>
-                        <div class="bg-white p-2 rounded border border-slate-200"><code>work_days</code> : วันที่ทำงาน</div>
-                        <div class="bg-white p-2 rounded border border-slate-200"><code>sso_type</code> : 33, 39, 40_1..3, none</div>
-                        <div class="bg-white p-2 rounded border border-slate-200"><code>calc_tax</code> : 1 (หักภาษี) / 0</div>
-                        <div class="bg-white p-2 rounded border border-slate-200"><code>ot15</code> : ชม. OT 1.5</div>
-                        <div class="bg-white p-2 rounded border border-slate-200"><code>ot20</code> : ชม. OT 2.0</div>
-                        <div class="bg-white p-2 rounded border border-slate-200"><code>ot30</code> : ชม. OT 3.0</div>
-                        <div class="bg-white p-2 rounded border border-slate-200"><code>other_income</code> : รายได้อื่นๆ</div>
-                        <div class="bg-white p-2 rounded border border-slate-200"><code>deductions</code> : หักอื่นๆ</div>
+                <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200/80 text-xs text-slate-600">
+                    <span class="font-bold text-slate-700 block mb-2">รูปแบบคอลัมน์ในไฟล์ Excel ที่รองรับ:</span>
+                    <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-2">
+                        <div class="bg-white p-2 rounded-xl border border-slate-200"><code>name</code> : ชื่อพนักงาน</div>
+                        <div class="bg-white p-2 rounded-xl border border-slate-200"><code>type</code> : monthly / daily</div>
+                        <div class="bg-white p-2 rounded-xl border border-slate-200"><code>salary_or_daily</code> : เงินเดือน/รายวัน</div>
+                        <div class="bg-white p-2 rounded-xl border border-slate-200"><code>work_days</code> : วันทำงาน</div>
+                        <div class="bg-white p-2 rounded-xl border border-slate-200"><code>ot15</code> : ชม. OT 1.5</div>
+                        <div class="bg-white p-2 rounded-xl border border-slate-200"><code>ot20</code> : ชม. OT 2.0</div>
+                        <div class="bg-white p-2 rounded-xl border border-slate-200"><code>ot30</code> : ชม. OT 3.0</div>
+                        <div class="bg-white p-2 rounded-xl border border-slate-200"><code>other_income</code> : รายได้อื่นๆ</div>
+                        <div class="bg-white p-2 rounded-xl border border-slate-200"><code>other_deduction</code> : หักอื่นๆ</div>
+                        <div class="bg-white p-2 rounded-xl border border-slate-200"><code>sso_type</code> : 33, 39, 40_1..3, none</div>
+                        <div class="bg-white p-2 rounded-xl border border-slate-200"><code>auto_tax</code> : yes / no</div>
                     </div>
                 </div>
             </div>
 
-            <!-- ส่วนแสดงตารางสรุปผลลัพธ์กลุ่ม -->
-            <div id="bulkResultSection" class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 hidden space-y-4">
+            <!-- กล่องแจ้งเตือนข้อผิดพลาดแบบ Inline (แทน alert()) -->
+            <div id="bulkErrorBox" class="hidden bg-rose-50 border border-rose-200 text-rose-700 px-4 py-3 rounded-2xl text-sm flex items-center justify-between">
+                <div class="flex items-center space-x-2">
+                    <i class="fa-solid fa-circle-exclamation"></i>
+                    <span id="bulkErrorText">ไม่สามารถอ่านไฟล์ได้</span>
+                </div>
+                <button type="button" onclick="document.getElementById('bulkErrorBox').classList.add('hidden')" class="text-rose-500 hover:text-rose-700"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <!-- ส่วนแสดงตารางสรุปผลลัพธ์กลุ่ม + การ์ดต้นทุนองค์กร -->
+            <div id="bulkResultSection" class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 hidden space-y-6">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                     <div>
                         <h3 class="text-lg font-bold text-slate-800">ผลการประมวลผลเงินเดือนพนักงานทั้งบริษัท</h3>
                         <p id="summaryStats" class="text-xs text-slate-500 mt-0.5">พบพนักงานทั้งหมด 0 คน ยอดจ่ายสุทธิรวม 0.00 บาท</p>
                     </div>
-                    <button onclick="exportToExcel()" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-xl text-sm transition shadow-sm flex items-center space-x-2">
+                    <button type="button" onclick="exportToExcel()" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl text-sm transition shadow-sm flex items-center space-x-2">
                         <i class="fa-solid fa-file-excel"></i>
-                        <span>ดาวน์โหลดรายงานสรุป (.xlsx)</span>
+                        <span>ส่งออกผลลัพธ์เป็น Excel (.xlsx)</span>
                     </button>
                 </div>
 
-                <div class="overflow-x-auto rounded-xl border border-slate-200">
+                <!-- การ์ดสรุปต้นทุนรวมองค์กร & สัดส่วน OT -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="bg-indigo-50/80 p-4 rounded-2xl border border-indigo-100">
+                        <div class="text-xs text-indigo-600 font-semibold">ยอดโอนสุทธิพนักงานรวม</div>
+                        <div id="cardTotalNetPay" class="text-xl font-bold text-indigo-950 mt-1">0.00 บาท</div>
+                        <div id="cardEmpCount" class="text-[11px] text-slate-500 mt-0.5">พนักงาน 0 คน</div>
+                    </div>
+                    <div class="bg-rose-50/80 p-4 rounded-2xl border border-rose-100">
+                        <div class="text-xs text-rose-600 font-semibold">สมทบประกันสังคมฝั่งนายจ้าง (ม.33)</div>
+                        <div id="cardEmployerSSO" class="text-xl font-bold text-rose-900 mt-1">0.00 บาท</div>
+                        <div class="text-[11px] text-slate-500 mt-0.5">สมทบ 5% เท่าลูกจ้าง ม.33</div>
+                    </div>
+                    <div class="bg-emerald-50/80 p-4 rounded-2xl border border-emerald-100">
+                        <div class="text-xs text-emerald-700 font-semibold">ต้นทุนค่าแรงรวมขององค์กร</div>
+                        <div id="cardTotalOrgCost" class="text-xl font-bold text-emerald-950 mt-1">0.00 บาท</div>
+                        <div class="text-[11px] text-slate-500 mt-0.5">ค่าจ้าง + OT + รายได้อื่น + ปกส.นายจ้าง</div>
+                    </div>
+                    <div class="bg-amber-50/80 p-4 rounded-2xl border border-amber-100 space-y-1.5">
+                        <div class="flex justify-between items-center">
+                            <span class="text-xs text-amber-800 font-semibold">สัดส่วนชั่วโมง OT</span>
+                            <span id="cardTotalOTCost" class="text-xs font-bold text-amber-900">0.00 บ.</span>
+                        </div>
+                        <!-- แถบกราฟสัดส่วน OT 1.5 / 2.0 / 3.0 -->
+                        <div class="w-full h-2.5 bg-amber-200/70 rounded-full overflow-hidden flex">
+                            <div id="barOt15" class="bg-amber-500 h-full transition-all" style="width: 0%"></div>
+                            <div id="barOt20" class="bg-orange-500 h-full transition-all" style="width: 0%"></div>
+                            <div id="barOt30" class="bg-rose-500 h-full transition-all" style="width: 0%"></div>
+                        </div>
+                        <div id="cardOTHoursSplit" class="text-[11px] text-slate-600">1.5: 0ชม. | 2.0: 0ชม. | 3.0: 0ชม.</div>
+                        <div id="cardOTViolationCount" class="text-[11px] font-semibold text-emerald-700 pt-0.5">ผ่านเกณฑ์ OT กฎหมายทุกคน (0 คนเกินกำหนด)</div>
+                    </div>
+                </div>
+
+                <!-- ตารางแสดงผลลัพธ์รายบุคคล -->
+                <div class="overflow-x-auto rounded-2xl border border-slate-200">
                     <table class="w-full text-left border-collapse" id="resultTable">
                         <thead>
                             <tr class="bg-slate-100 text-slate-700 text-xs font-bold uppercase tracking-wider">
@@ -362,19 +898,20 @@
                                 <th class="p-3 text-right">ฐานเงินเดือน/วัน</th>
                                 <th class="p-3 text-center">วันทำงาน</th>
                                 <th class="p-3 text-right">ค่าจ้างงวดงาน</th>
-                                <th class="p-3 text-right">OT 1.5 <span class="block text-[10px] font-normal text-slate-500">(ชม./บาท)</span></th>
-                                <th class="p-3 text-right">OT 2.0 <span class="block text-[10px] font-normal text-slate-500">(ชม./บาท)</span></th>
-                                <th class="p-3 text-right">OT 3.0 <span class="block text-[10px] font-normal text-slate-500">(ชม./บาท)</span></th>
+                                <th class="p-3 text-right">OT 1.5</th>
+                                <th class="p-3 text-right">OT 2.0</th>
+                                <th class="p-3 text-right">OT 3.0</th>
                                 <th class="p-3 text-right">ค่า OT รวม</th>
                                 <th class="p-3 text-right">รายได้อื่นๆ</th>
                                 <th class="p-3 text-right">ประกันสังคม</th>
                                 <th class="p-3 text-right">ภาษีหัก ณ ที่จ่าย</th>
                                 <th class="p-3 text-right">หักอื่นๆ</th>
-                                <th class="p-3 text-right text-indigo-700">สุทธิ</th>
+                                <th class="p-3 text-right text-indigo-700">ยอดสุทธิ</th>
+                                <th class="p-3 text-center">สลิป</th>
                             </tr>
                         </thead>
                         <tbody id="resultTableBody" class="divide-y divide-slate-200 text-sm text-slate-600">
-                            <!-- ข้อมูลจะถูกแทรกที่นี่ -->
+                            <!-- แทรกข้อมูลแถวผ่าน JavaScript -->
                         </tbody>
                     </table>
                 </div>
@@ -383,97 +920,255 @@
 
     </main>
 
+    <!-- หน้าต่าง Modal สลิปเงินเดือนพร้อมพิมพ์ (Payslip View) -->
+    <div id="payslipModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4 z-50" onclick="if(event.target === this) closePayslipModal()">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full overflow-hidden border border-slate-200">
+            <div class="bg-indigo-700 text-white px-6 py-4 flex justify-between items-center no-print">
+                <div class="flex items-center space-x-2">
+                    <i class="fa-solid fa-file-invoice-dollar text-amber-300"></i>
+                    <span class="font-bold text-sm">ใบแจ้งเงินเดือนอิเล็กทรอนิกส์ (Electronic Payslip)</span>
+                </div>
+                <button type="button" onclick="closePayslipModal()" aria-label="ปิดหน้าต่าง" class="text-white/80 hover:text-white text-lg">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div id="payslipPrintArea" class="p-6 space-y-5 text-sm text-slate-800">
+                <div class="flex justify-between items-start border-b border-slate-200 pb-4">
+                    <div>
+                        <h4 class="text-lg font-bold text-indigo-800">ใบแจ้งเงินเดือน / PAYSLIP</h4>
+                        <p class="text-xs text-slate-500">ประจำงวดการจ่ายเงินเดือน พ.ศ. 2569</p>
+                    </div>
+                    <div class="text-right text-xs space-y-0.5">
+                        <div class="font-bold text-slate-800 text-sm" id="slipEmpName">-</div>
+                        <div class="text-slate-500" id="slipEmpType">-</div>
+                        <div class="text-slate-500" id="slipWorkDays">-</div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <!-- ฝั่งเงินได้ -->
+                    <div class="border border-slate-200 rounded-2xl p-4 space-y-2">
+                        <div class="font-bold text-emerald-700 border-b border-slate-100 pb-1.5 text-xs uppercase">รายการเงินได้ (Earnings)</div>
+                        <div id="slipEarningsList" class="space-y-1.5 text-xs"></div>
+                        <div class="border-t border-slate-200 pt-2 flex justify-between font-bold text-emerald-700">
+                            <span>รวมเงินได้ทั้งหมด</span>
+                            <span id="slipTotalEarnings">0.00 บาท</span>
+                        </div>
+                    </div>
+
+                    <!-- ฝั่งรายการหัก -->
+                    <div class="border border-slate-200 rounded-2xl p-4 space-y-2">
+                        <div class="font-bold text-rose-700 border-b border-slate-100 pb-1.5 text-xs uppercase">รายการหัก (Deductions)</div>
+                        <div id="slipDeductionsList" class="space-y-1.5 text-xs"></div>
+                        <div class="border-t border-slate-200 pt-2 flex justify-between font-bold text-rose-700">
+                            <span>รวมรายการหักทั้งหมด</span>
+                            <span id="slipTotalDeductions">0.00 บาท</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-indigo-50 border border-indigo-200 rounded-2xl p-4 flex justify-between items-center">
+                    <div>
+                        <div class="text-xs text-indigo-700 font-bold">เงินได้สุทธิ (NET PAY)</div>
+                        <div class="text-[11px] text-slate-500" id="slipTaxNote">สิทธิ์ลดหย่อนภาษีรวม 60,000 บาท/ปี</div>
+                    </div>
+                    <div class="text-2xl font-extrabold text-indigo-800" id="slipNetPay">0.00 บาท</div>
+                </div>
+            </div>
+
+            <div class="bg-slate-50 px-6 py-3.5 border-t border-slate-200 flex justify-end space-x-3 no-print">
+                <button type="button" onclick="closePayslipModal()" class="px-4 py-2 rounded-xl text-xs font-medium bg-slate-200 hover:bg-slate-300 text-slate-700 transition">ปิดหน้าต่าง</button>
+                <button type="button" onclick="window.print()" class="px-4 py-2 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm transition flex items-center space-x-1.5">
+                    <i class="fa-solid fa-print"></i>
+                    <span>พิมพ์ / บันทึก PDF</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- ส่วนท้าย -->
     <footer class="bg-white border-t border-slate-200 mt-12 py-6 text-center text-slate-500 text-xs">
-        <p>ระบบคำนวณเงินเดือนและค่าล่วงเวลาพนักงาน ออกแบบด้วยมาตรฐานความแม่นยำสูงสุดตามหลักกรมสวัสดิการและคุ้มครองแรงงาน</p>
+        <p>ระบบคำนวณเงินเดือนและค่าล่วงเวลาพนักงาน (Payroll & OT Calculator) — อ้างอิงหลักกฎหมายแรงงานไทยและเกณฑ์ประกันสังคม/ภาษีปี 2569</p>
     </footer>
 
     <!-- JavaScript การคำนวณและจัดการตาราง -->
     <script>
-        // สลับแท็บการทำงาน
+        let latestSingleState = null;
+        let bulkProcessedRecords = [];
+        let globalBulkExportData = [];
+
+        function getEl(id) {
+            return document.getElementById(id);
+        }
+
+        function setText(id, val) {
+            const el = getEl(id);
+            if (el) el.innerText = val;
+        }
+
+        function setHtml(id, val) {
+            const el = getEl(id);
+            if (el) el.innerHTML = val;
+        }
+
+        function fmt(num) {
+            return (Number(num) || 0).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+        function fmtInt(num) {
+            return Math.round(Number(num) || 0).toLocaleString('th-TH');
+        }
+
+        // สลับแท็บหลัก
         function switchTab(tab) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-            document.getElementById('btn-single').className = "px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 text-indigo-100 hover:text-white flex items-center space-x-2";
-            document.getElementById('btn-bulk').className = "px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 text-indigo-100 hover:text-white flex items-center space-x-2";
+            const btnSingle = getEl('btn-single');
+            const btnBulk = getEl('btn-bulk');
+            const inactiveCls = "flex-1 md:flex-initial px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 text-indigo-100 hover:text-white flex items-center justify-center space-x-2";
+            const activeCls = "flex-1 md:flex-initial px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 bg-white text-indigo-700 shadow-sm flex items-center justify-center space-x-2";
+
+            if (btnSingle) btnSingle.className = inactiveCls;
+            if (btnBulk) btnBulk.className = inactiveCls;
 
             if (tab === 'single') {
-                document.getElementById('tab-single').classList.add('active');
-                document.getElementById('btn-single').className = "px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 bg-white text-indigo-700 shadow-sm flex items-center space-x-2";
+                const tabSingle = getEl('tab-single');
+                if (tabSingle) tabSingle.classList.add('active');
+                if (btnSingle) btnSingle.className = activeCls;
             } else {
-                document.getElementById('tab-bulk').classList.add('active');
-                document.getElementById('btn-bulk').className = "px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 bg-white text-indigo-700 shadow-sm flex items-center space-x-2";
+                const tabBulk = getEl('tab-bulk');
+                if (tabBulk) tabBulk.classList.add('active');
+                if (btnBulk) btnBulk.className = activeCls;
             }
         }
 
-        // ฟังก์ชันเปิด/ปิดแสดงรายละเอียดในกล่องสรุปผล
+        // เปิด/ปิดกล่องรายการลดหย่อนภาษี ปี 2569
+        function toggleDeductionPanel() {
+            const body = getEl('taxDeduction2569Body');
+            const text = getEl('dedPanelToggleText');
+            const icon = getEl('dedPanelToggleIcon');
+            if (!body) return;
+            if (body.classList.contains('hidden')) {
+                body.classList.remove('hidden');
+                if (text) text.innerText = 'ซ่อนรายการ';
+                if (icon) icon.style.transform = 'rotate(180deg)';
+            } else {
+                body.classList.add('hidden');
+                if (text) text.innerText = 'แสดงรายการ';
+                if (icon) icon.style.transform = 'rotate(0deg)';
+            }
+        }
+
+        // สลับหมวดหมู่ลดหย่อน 4 หมวด
+        function switchDedCategory(cat) {
+            const cats = ['family', 'invest', 'stimulus', 'donation'];
+            cats.forEach(c => {
+                const panel = getEl('ded-cat-' + c);
+                const btn = getEl('cat-btn-' + c);
+                if (panel) panel.classList.remove('active');
+                if (btn) btn.className = "px-2.5 py-2 rounded-xl text-xs font-semibold bg-white text-slate-600 hover:bg-amber-50 border border-slate-200 transition text-center";
+            });
+            const activePanel = getEl('ded-cat-' + cat);
+            const activeBtn = getEl('cat-btn-' + cat);
+            if (activePanel) activePanel.classList.add('active');
+            if (activeBtn) activeBtn.className = "px-2.5 py-2 rounded-xl text-xs font-semibold bg-amber-500 text-white shadow-sm transition text-center";
+        }
+
+        // เชื่อม checkbox กับช่องกรอกตัวเลข
+        function toggleInlineInput(chkId, inputId, defaultVal) {
+            const chk = getEl(chkId);
+            const inp = getEl(inputId);
+            if (!chk || !inp) return;
+            if (chk.checked && (parseFloat(inp.value) || 0) <= 0) {
+                inp.value = defaultVal;
+            } else if (!chk.checked) {
+                inp.value = 0;
+            }
+        }
+
+        function syncChkFromInput(chkId, inputId) {
+            const chk = getEl(chkId);
+            const inp = getEl(inputId);
+            if (!chk || !inp) return;
+            chk.checked = (parseFloat(inp.value) || 0) > 0;
+        }
+
+        // เปิด/ปิด Accordion ในกล่องสรุปผล
         function toggleAccordion(id) {
-            const el = document.getElementById(id);
-            const icon = document.getElementById('icon-' + id);
+            const el = getEl(id);
+            const icon = getEl('icon-' + id);
+            if (!el) return;
             if (el.classList.contains('hidden')) {
                 el.classList.remove('hidden');
-                icon.style.transform = 'rotate(180deg)';
+                if (icon) icon.style.transform = 'rotate(180deg)';
             } else {
                 el.classList.add('hidden');
-                icon.style.transform = 'rotate(0deg)';
+                if (icon) icon.style.transform = 'rotate(0deg)';
             }
         }
 
-        // ฟังก์ชันเพิ่มแถวรายได้อื่นๆ หรือรายการหักแบบไดนามิก
-        function addDynamicRow(kind) {
+        // เพิ่มแถวรายได้อื่นๆ หรือรายการหักแบบไดนามิก
+        function addDynamicRow(kind, title = '', amount = 0) {
             if (kind === 'other') {
-                const container = document.getElementById('otherIncomeContainer');
+                const container = getEl('otherIncomeContainer');
+                if (!container) return;
                 const div = document.createElement('div');
                 div.className = 'flex gap-2 dynamic-row-other';
                 div.innerHTML = `
-                    <input type="text" placeholder="ชื่อรายการ" class="w-2/3 px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none text-sm" oninput="calculateSingle()">
-                    <input type="number" placeholder="จำนวนเงิน" value="0" min="0" step="any" class="w-1/4 px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none text-sm" oninput="calculateSingle()">
-                    <button type="button" onclick="this.parentElement.remove(); calculateSingle();" class="w-1/12 text-rose-500 hover:text-rose-700 flex items-center justify-center"><i class="fa-solid fa-trash-can text-xs"></i></button>
+                    <input type="text" placeholder="ชื่อรายการ" value="${title}" class="w-2/3 px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none text-sm" oninput="calculateSingle()">
+                    <input type="number" placeholder="จำนวนเงิน" value="${amount}" min="0" step="any" class="w-1/4 px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none text-sm" oninput="calculateSingle()">
+                    <button type="button" onclick="this.parentElement.remove(); calculateSingle();" aria-label="ลบรายการ" class="w-1/12 text-rose-500 hover:text-rose-700 flex items-center justify-center"><i class="fa-solid fa-trash-can text-xs"></i></button>
                 `;
                 container.appendChild(div);
             } else {
-                const container = document.getElementById('deductionContainer');
+                const container = getEl('deductionContainer');
+                if (!container) return;
                 const div = document.createElement('div');
                 div.className = 'flex gap-2 dynamic-row-deduction';
                 div.innerHTML = `
-                    <input type="text" placeholder="ชื่อรายการหักอื่นๆ" class="w-2/3 px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none text-sm" oninput="calculateSingle()">
-                    <input type="number" placeholder="จำนวนเงิน" value="0" min="0" step="any" class="w-1/4 px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none text-sm" oninput="calculateSingle()">
-                    <button type="button" onclick="this.parentElement.remove(); calculateSingle();" class="w-1/12 text-rose-500 hover:text-rose-700 flex items-center justify-center"><i class="fa-solid fa-trash-can text-xs"></i></button>
+                    <input type="text" placeholder="ชื่อรายการหักอื่นๆ" value="${title}" class="w-2/3 px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none text-sm" oninput="calculateSingle()">
+                    <input type="number" placeholder="จำนวนเงิน" value="${amount}" min="0" step="any" class="w-1/4 px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none text-sm" oninput="calculateSingle()">
+                    <button type="button" onclick="this.parentElement.remove(); calculateSingle();" aria-label="ลบรายการหัก" class="w-1/12 text-rose-500 hover:text-rose-700 flex items-center justify-center"><i class="fa-solid fa-trash-can text-xs"></i></button>
                 `;
                 container.appendChild(div);
             }
         }
 
-        // สลับฟิลด์กรอกข้อมูลตามประเภทการจ้าง
-        function toggleEmpType() {
-            const type = document.getElementById('empType').value;
-            const groupMonthly = document.getElementById('groupMonthlySalary');
-            const groupDaily = document.getElementById('groupDailyRate');
-            const labelDays = document.getElementById('labelDays');
+        // สลับฟิลด์รายเดือน / รายวัน
+        function toggleEmpType(setDefaultDays = true) {
+            const empTypeEl = getEl('empType');
+            const type = empTypeEl ? empTypeEl.value : 'monthly';
+            const groupMonthly = getEl('groupMonthlySalary');
+            const groupDaily = getEl('groupDailyRate');
+            const labelDays = getEl('labelDays');
+            const workDaysInput = getEl('workDays');
 
             if (type === 'monthly') {
-                groupMonthly.style.display = 'block';
-                groupDaily.style.display = 'none';
-                labelDays.innerText = 'จำนวนวันที่ทำงานในเดือน (วัน)';
-                document.getElementById('resEmpTypeTag').innerText = 'พนักงานรายเดือน';
+                if (groupMonthly) groupMonthly.style.display = 'block';
+                if (groupDaily) groupDaily.style.display = 'none';
+                if (labelDays) labelDays.innerText = 'จำนวนวันที่ทำงานในเดือน (วัน)';
+                if (setDefaultDays && workDaysInput && Number(workDaysInput.value) === 26) workDaysInput.value = 30;
+                setText('resEmpTypeTag', 'พนักงานรายเดือน');
             } else {
-                groupMonthly.style.display = 'none';
-                groupDaily.style.display = 'block';
-                labelDays.innerText = 'จำนวนวันที่ทำงานจริง (วัน)';
-                document.getElementById('resEmpTypeTag').innerText = 'พนักงานรายวัน';
+                if (groupMonthly) groupMonthly.style.display = 'none';
+                if (groupDaily) groupDaily.style.display = 'block';
+                if (labelDays) labelDays.innerText = 'จำนวนวันที่ทำงานจริง (วัน)';
+                if (setDefaultDays && workDaysInput && Number(workDaysInput.value) === 30) workDaysInput.value = 26;
+                setText('resEmpTypeTag', 'พนักงานรายวัน');
             }
             calculateSingle();
         }
 
-        // ฟังก์ชันคำนวณเงินสมทบประกันสังคม (เกณฑ์ปี 2569)
+        // คำนวณเงินสมทบประกันสังคม (ปี 2569)
         function calculateSSO(ssoType, wageBase) {
             const code = (ssoType || 'none').toString().trim().toLowerCase();
             if (code === '33') {
-                // มาตรา 33 ปี 2569: 5% ของค่าจ้าง เพดานสูงสุด 17,500 บาท (สูงสุด 875 บาท)
+                // มาตรา 33 ปี 2569: 5% เพดานฐาน 17,500 บาท (สูงสุด 875 บาท/เดือน)
                 const effectiveWage = Math.min(Math.max(wageBase, 0), 17500);
                 const amount = Math.round(effectiveWage * 0.05);
                 return { amount: amount, label: 'ประกันสังคม ม.33 (5%)' };
             } else if (code === '39') {
-                return { amount: 432, label: 'ประกันสังคม ม.39 (เหมาจ่าย)' };
+                return { amount: 432, label: 'ประกันสังคม ม.39 (คงที่ 432 บ.)' };
             } else if (code === '40_1' || code === '40-1') {
                 return { amount: 70, label: 'ประกันสังคม ม.40 ทางเลือก 1' };
             } else if (code === '40_2' || code === '40-2') {
@@ -484,16 +1179,216 @@
             return { amount: 0, label: 'ไม่หักประกันสังคม' };
         }
 
-        // ฟังก์ชันคำนวณภาษีเงินได้บุคคลธรรมดาแบบขั้นบันได (เกณฑ์กรมสรรพากร)
-        function calculateProgressiveTax(monthlyGrossIncome, monthlySSO) {
-            const annualIncome = Math.max(0, monthlyGrossIncome) * 12;
-            // หักค่าใช้จ่ายเหมา 50% สูงสุดไม่เกิน 100,000 บาท
-            const expenseDeduction = Math.min(annualIncome * 0.5, 100000);
-            // ค่าลดหย่อนส่วนตัว 60,000 + ประกันสังคมทั้งปี
-            const personalAllowance = 60000;
-            const annualSSO = Math.max(0, monthlySSO) * 12;
-            const totalAllowance = personalAllowance + annualSSO;
+        // รวบรวมและคำนวณรายการลดหย่อนภาษี ปี 2569 ทั้ง 4 หมวด พร้อมเพดานตามกฎหมาย
+        function collectTaxDeductions2569(annualIncome, annualSSO) {
+            const items = [];
 
+            // หมวด 1: ส่วนตัว/ครอบครัว
+            const personal = 60000;
+            items.push({ group: 'ส่วนตัว/ครอบครัว', name: 'ค่าลดหย่อนส่วนตัว', amount: personal });
+
+            const spouseEl = getEl('ded_spouse');
+            const spouse = (spouseEl && spouseEl.checked) ? 60000 : 0;
+            setText('val_ded_spouse', spouse > 0 ? '60,000 / 60,000 บ.' : '0 / 60,000 บ.');
+            if (spouse > 0) items.push({ group: 'ส่วนตัว/ครอบครัว', name: 'คู่สมรสไม่มีรายได้', amount: spouse });
+
+            const c1Chk = getEl('ded_child1_chk');
+            const c1Inp = getEl('ded_child1_qty');
+            const c1Qty = (c1Chk && c1Chk.checked) ? Math.max(0, Math.floor(parseFloat(c1Inp ? c1Inp.value : 0) || 0)) : 0;
+            const child1 = c1Qty * 30000;
+            setText('val_ded_child1', fmtInt(child1) + ' บ.');
+            if (child1 > 0) items.push({ group: 'ส่วนตัว/ครอบครัว', name: `บุตรทั่วไป (${c1Qty} คน)`, amount: child1 });
+
+            const c2Chk = getEl('ded_child2_chk');
+            const c2Inp = getEl('ded_child2_qty');
+            const c2Qty = (c2Chk && c2Chk.checked) ? Math.max(0, Math.floor(parseFloat(c2Inp ? c2Inp.value : 0) || 0)) : 0;
+            const child2 = c2Qty * 60000;
+            setText('val_ded_child2', fmtInt(child2) + ' บ.');
+            if (child2 > 0) items.push({ group: 'ส่วนตัว/ครอบครัว', name: `บุตรคนที่ 2+ เกิดปี 2561+ (${c2Qty} คน)`, amount: child2 });
+
+            const matChk = getEl('ded_maternity_chk');
+            const matInp = getEl('ded_maternity_amt');
+            const matRaw = (matChk && matChk.checked) ? Math.max(0, parseFloat(matInp ? matInp.value : 0) || 0) : 0;
+            const maternity = Math.min(matRaw, 60000);
+            setText('val_ded_maternity', fmtInt(maternity) + ' บ.');
+            if (maternity > 0) items.push({ group: 'ส่วนตัว/ครอบครัว', name: 'ค่าคลอดบุตร', amount: maternity });
+
+            const pChk = getEl('ded_parents_chk');
+            const pInp = getEl('ded_parents_qty');
+            const pQty = (pChk && pChk.checked) ? Math.min(4, Math.max(0, Math.floor(parseFloat(pInp ? pInp.value : 0) || 0))) : 0;
+            const parents = pQty * 30000;
+            setText('val_ded_parents', fmtInt(parents) + ' บ.');
+            if (parents > 0) items.push({ group: 'ส่วนตัว/ครอบครัว', name: `เลี้ยงดูพ่อแม่ (${pQty} คน)`, amount: parents });
+
+            const dChk = getEl('ded_disabled_chk');
+            const dInp = getEl('ded_disabled_qty');
+            const dQty = (dChk && dChk.checked) ? Math.max(0, Math.floor(parseFloat(dInp ? dInp.value : 0) || 0)) : 0;
+            const disabled = dQty * 60000;
+            setText('val_ded_disabled', fmtInt(disabled) + ' บ.');
+            if (disabled > 0) items.push({ group: 'ส่วนตัว/ครอบครัว', name: `เลี้ยงดูผู้พิการ/ทุพพลภาพ (${dQty} คน)`, amount: disabled });
+
+            const totalFamily = personal + spouse + child1 + child2 + maternity + parents + disabled;
+
+            // หมวด 2: ประกันและการลงทุน
+            const lifeChk = getEl('ded_life_chk');
+            const lifeInp = getEl('ded_life_amt');
+            const lifeRaw = (lifeChk && lifeChk.checked) ? Math.max(0, parseFloat(lifeInp ? lifeInp.value : 0) || 0) : 0;
+
+            const healthChk = getEl('ded_health_chk');
+            const healthInp = getEl('ded_health_amt');
+            const healthRaw = (healthChk && healthChk.checked) ? Math.max(0, parseFloat(healthInp ? healthInp.value : 0) || 0) : 0;
+
+            const lifeCapped = Math.min(lifeRaw, 100000);
+            const healthCapped = Math.min(healthRaw, 25000);
+            const lifeAndHealth = Math.min(lifeCapped + healthCapped, 100000);
+            setText('val_cap_life_health', `ใช้สิทธิ์ ${fmtInt(lifeAndHealth)} / 100,000 บ.`);
+            if (lifeAndHealth > 0) items.push({ group: 'ประกันและการลงทุน', name: 'ประกันชีวิต + สุขภาพตัวเอง', amount: lifeAndHealth });
+
+            const phChk = getEl('ded_parent_health_chk');
+            const phInp = getEl('ded_parent_health_amt');
+            const parentHealthRaw = (phChk && phChk.checked) ? Math.max(0, parseFloat(phInp ? phInp.value : 0) || 0) : 0;
+            const parentHealth = Math.min(parentHealthRaw, 15000);
+            setText('val_ded_parent_health', fmtInt(parentHealth) + ' บ.');
+            if (parentHealth > 0) items.push({ group: 'ประกันและการลงทุน', name: 'ประกันสุขภาพพ่อแม่', amount: parentHealth });
+
+            const slChk = getEl('ded_spouse_life_chk');
+            const slInp = getEl('ded_spouse_life_amt');
+            const spouseLifeRaw = (slChk && slChk.checked) ? Math.max(0, parseFloat(slInp ? slInp.value : 0) || 0) : 0;
+            const spouseLife = Math.min(spouseLifeRaw, 10000);
+            setText('val_ded_spouse_life', fmtInt(spouseLife) + ' บ.');
+            if (spouseLife > 0) items.push({ group: 'ประกันและการลงทุน', name: 'ประกันชีวิตคู่สมรส', amount: spouseLife });
+
+            const ssoCapped = Math.min(Math.max(0, annualSSO), 10500);
+            setText('val_ded_sso_annual', fmtInt(ssoCapped) + ' บ.');
+            if (ssoCapped > 0) items.push({ group: 'ประกันและการลงทุน', name: 'ประกันสังคมทั้งปี', amount: ssoCapped });
+
+            const teChk = getEl('ded_thaiesg_chk');
+            const teInp = getEl('ded_thaiesg_amt');
+            const thaiEsgRaw = (teChk && teChk.checked) ? Math.max(0, parseFloat(teInp ? teInp.value : 0) || 0) : 0;
+            const thaiEsg = Math.min(thaiEsgRaw, annualIncome * 0.30, 300000);
+            setText('val_ded_thaiesg', fmtInt(thaiEsg) + ' บ.');
+            if (thaiEsg > 0) items.push({ group: 'ประกันและการลงทุน', name: 'กองทุน ThaiESG / ThaiESGX ใหม่', amount: thaiEsg });
+
+            const ltfChk = getEl('ded_thaiesgx_ltf_chk');
+            const ltfInp = getEl('ded_thaiesgx_ltf_amt');
+            const thaiEsgxLtfRaw = (ltfChk && ltfChk.checked) ? Math.max(0, parseFloat(ltfInp ? ltfInp.value : 0) || 0) : 0;
+            const thaiEsgxLtf = Math.min(thaiEsgxLtfRaw, 50000);
+            setText('val_ded_thaiesgx_ltf', fmtInt(thaiEsgxLtf) + ' บ.');
+            if (thaiEsgxLtf > 0) items.push({ group: 'ประกันและการลงทุน', name: 'ThaiESGX สับเปลี่ยน LTF', amount: thaiEsgxLtf });
+
+            // กลุ่มกองทุนเกษียณรวมเพดาน 500,000 บาท
+            const rmfChk = getEl('ded_rmf_chk');
+            const rmfInp = getEl('ded_rmf_amt');
+            const rmfRaw = (rmfChk && rmfChk.checked) ? Math.max(0, parseFloat(rmfInp ? rmfInp.value : 0) || 0) : 0;
+            const rmf = Math.min(rmfRaw, annualIncome * 0.30, 500000);
+
+            const pvdChk = getEl('ded_pvd_chk');
+            const pvdInp = getEl('ded_pvd_amt');
+            const pvdRaw = (pvdChk && pvdChk.checked) ? Math.max(0, parseFloat(pvdInp ? pvdInp.value : 0) || 0) : 0;
+            const pvd = Math.min(pvdRaw, annualIncome * 0.15, 500000);
+
+            const gpfChk = getEl('ded_gpf_chk');
+            const gpfInp = getEl('ded_gpf_amt');
+            const gpfRaw = (gpfChk && gpfChk.checked) ? Math.max(0, parseFloat(gpfInp ? gpfInp.value : 0) || 0) : 0;
+            const gpf = Math.min(gpfRaw, annualIncome * 0.30, 500000);
+
+            const tchChk = getEl('ded_teacher_chk');
+            const tchInp = getEl('ded_teacher_amt');
+            const teacherRaw = (tchChk && tchChk.checked) ? Math.max(0, parseFloat(tchInp ? tchInp.value : 0) || 0) : 0;
+            const teacher = Math.min(teacherRaw, 500000);
+
+            const annChk = getEl('ded_annuity_chk');
+            const annInp = getEl('ded_annuity_amt');
+            const annuityRaw = (annChk && annChk.checked) ? Math.max(0, parseFloat(annInp ? annInp.value : 0) || 0) : 0;
+            const annuity = Math.min(annuityRaw, annualIncome * 0.15, 200000);
+
+            const nsfChk = getEl('ded_nsf_chk');
+            const nsfInp = getEl('ded_nsf_amt');
+            const nsfRaw = (nsfChk && nsfChk.checked) ? Math.max(0, parseFloat(nsfInp ? nsfInp.value : 0) || 0) : 0;
+            const nsf = Math.min(nsfRaw, 30000);
+
+            const retirementTotal = Math.min(rmf + pvd + gpf + teacher + annuity + nsf, 500000);
+            setText('val_cap_retirement', `ใช้สิทธิ์ ${fmtInt(retirementTotal)} / 500,000 บ.`);
+            if (retirementTotal > 0) items.push({ group: 'ประกันและการลงทุน', name: 'กลุ่มเกษียณ (RMF/PVD/กบข./บำนาญ/กอช.)', amount: retirementTotal });
+
+            const totalInvest = lifeAndHealth + parentHealth + spouseLife + ssoCapped + thaiEsg + thaiEsgxLtf + retirementTotal;
+
+            // หมวด 3: กระตุ้นเศรษฐกิจ
+            const hiChk = getEl('ded_home_interest_chk');
+            const hiInp = getEl('ded_home_interest_amt');
+            const homeIntRaw = (hiChk && hiChk.checked) ? Math.max(0, parseFloat(hiInp ? hiInp.value : 0) || 0) : 0;
+            const homeInt = Math.min(homeIntRaw, 100000);
+            setText('val_ded_home_interest', fmtInt(homeInt) + ' บ.');
+            if (homeInt > 0) items.push({ group: 'กระตุ้นเศรษฐกิจ', name: 'ดอกเบี้ยที่อยู่อาศัย', amount: homeInt });
+
+            const artChk = getEl('ded_art_chk');
+            const artInp = getEl('ded_art_amt');
+            const artRaw = (artChk && artChk.checked) ? Math.max(0, parseFloat(artInp ? artInp.value : 0) || 0) : 0;
+            const art = Math.min(artRaw, 100000);
+            setText('val_ded_art', fmtInt(art) + ' บ.');
+            if (art > 0) items.push({ group: 'กระตุ้นเศรษฐกิจ', name: 'ซื้องานศิลปะ', amount: art });
+
+            const seChk = getEl('ded_se_chk');
+            const seInp = getEl('ded_se_amt');
+            const seRaw = (seChk && seChk.checked) ? Math.max(0, parseFloat(seInp ? seInp.value : 0) || 0) : 0;
+            const se = Math.min(seRaw, 100000);
+            setText('val_ded_se', fmtInt(se) + ' บ.');
+            if (se > 0) items.push({ group: 'กระตุ้นเศรษฐกิจ', name: 'วิสาหกิจเพื่อสังคม (Social Enterprise)', amount: se });
+
+            const cctvChk = getEl('ded_cctv_chk');
+            const cctvInp = getEl('ded_cctv_amt');
+            const cctv = (cctvChk && cctvChk.checked) ? Math.max(0, parseFloat(cctvInp ? cctvInp.value : 0) || 0) : 0;
+            setText('val_ded_cctv', fmtInt(cctv) + ' บ.');
+            if (cctv > 0) items.push({ group: 'กระตุ้นเศรษฐกิจ', name: 'กล้อง CCTV เขตพัฒนาพิเศษ', amount: cctv });
+
+            const solChk = getEl('ded_solar_chk');
+            const solInp = getEl('ded_solar_amt');
+            const solarRaw = (solChk && solChk.checked) ? Math.max(0, parseFloat(solInp ? solInp.value : 0) || 0) : 0;
+            const solar = Math.min(solarRaw, 200000);
+            setText('val_ded_solar', fmtInt(solar) + ' บ.');
+            if (solar > 0) items.push({ group: 'กระตุ้นเศรษฐกิจ', name: 'ติดตั้ง Solar Rooftop', amount: solar });
+
+            const totalStimulus = homeInt + art + se + cctv + solar;
+
+            // หมวด 4: เงินบริจาค
+            const partyChk = getEl('ded_party_chk');
+            const partyInp = getEl('ded_party_amt');
+            const partyRaw = (partyChk && partyChk.checked) ? Math.max(0, parseFloat(partyInp ? partyInp.value : 0) || 0) : 0;
+            const party = Math.min(partyRaw, 10000);
+            setText('val_ded_party', fmtInt(party) + ' บ.');
+            if (party > 0) items.push({ group: 'เงินบริจาค', name: 'บริจาคพรรคการเมือง', amount: party });
+
+            const expenseDeduction = Math.min(annualIncome * 0.5, 100000);
+            const incomeBeforeDonations = Math.max(0, annualIncome - expenseDeduction - (totalFamily + totalInvest + totalStimulus + party));
+            const max10Pct = incomeBeforeDonations * 0.10;
+
+            const eduChk = getEl('ded_edu2x_chk');
+            const eduInp = getEl('ded_edu2x_amt');
+            const edu2xRaw = (eduChk && eduChk.checked) ? Math.max(0, parseFloat(eduInp ? eduInp.value : 0) || 0) : 0;
+            const edu2x = Math.min(edu2xRaw * 2, max10Pct);
+            setText('val_ded_edu2x', fmtInt(edu2x) + ' บ.');
+            if (edu2x > 0) items.push({ group: 'เงินบริจาค', name: 'บริจาคการศึกษา/กีฬา/สังคม/ร.พ.รัฐ (2 เท่า)', amount: edu2x });
+
+            const incomeAfterEdu = Math.max(0, incomeBeforeDonations - edu2x);
+            const gdChk = getEl('ded_general_don_chk');
+            const gdInp = getEl('ded_general_don_amt');
+            const genDonRaw = (gdChk && gdChk.checked) ? Math.max(0, parseFloat(gdInp ? gdInp.value : 0) || 0) : 0;
+            const genDon = Math.min(genDonRaw, incomeAfterEdu * 0.10);
+            setText('val_ded_general_don', fmtInt(genDon) + ' บ.');
+            if (genDon > 0) items.push({ group: 'เงินบริจาค', name: 'เงินบริจาคทั่วไป', amount: genDon });
+
+            const totalDonations = party + edu2x + genDon;
+            const grandTotalAllowance = totalFamily + totalInvest + totalStimulus + totalDonations;
+
+            return {
+                grandTotalAllowance,
+                items
+            };
+        }
+
+        // คำนวณภาษีเงินได้บุคคลธรรมดาแบบขั้นบันได (เกณฑ์สรรพากร 8 ขั้น)
+        function calculateProgressiveTaxFromAllowance(annualIncome, totalAllowance) {
+            const expenseDeduction = Math.min(annualIncome * 0.5, 100000);
             const netTaxableIncome = Math.max(0, annualIncome - expenseDeduction - totalAllowance);
 
             const brackets = [
@@ -523,254 +1418,623 @@
                 }
             }
 
-            const monthlyTax = annualTax / 12;
-
             return {
                 annualIncome,
                 expenseDeduction,
-                personalAllowance,
-                annualSSO,
                 totalAllowance,
                 netTaxableIncome,
                 annualTax,
-                monthlyTax,
+                monthlyTax: annualTax / 12,
                 breakdown
             };
         }
 
-        // ฟังก์ชันคำนวณหลักตามสูตร: (ฐาน / 30 / 8) * OT * ตัวคูณ + ประกันสังคม + ภาษีขั้นบันได
-        function calculatePayrollCore(type, baseRate, workDays, ot15, ot20, ot30, otherIncome, customDeductions, ssoType = 'none', enableTax = false) {
-            let basePay = 0;
-            let otBaseRate = 0;
-
-            if (type === 'monthly' || type === 'รายเดือน') {
-                const monthlySalary = baseRate;
-                basePay = (monthlySalary / 30) * workDays;
-                otBaseRate = monthlySalary;
-            } else {
-                const dailyRate = baseRate;
-                basePay = dailyRate * workDays;
-                otBaseRate = dailyRate * 30; 
+        // ประเมินความสอดคล้องกฎหมายแรงงาน มาตรา 26 (ไม่เกิน 36 ชม./สัปดาห์)
+        function evaluateOTCompliance(workDays, ot15, ot20, ot30) {
+            const totalOtHours = (Number(ot15) || 0) + (Number(ot20) || 0) + (Number(ot30) || 0);
+            const effectiveDays = Math.max(1, Number(workDays) || 0);
+            const legalLimit = effectiveDays <= 7 ? 36 : Math.max(36, Math.round((effectiveDays / 7) * 36));
+            const excessHours = Math.max(0, totalOtHours - legalLimit);
+            let status = 'normal'; // 'normal' | 'warning' | 'violation'
+            if (totalOtHours > legalLimit) {
+                status = 'violation';
+            } else if (totalOtHours > legalLimit * 0.85) {
+                status = 'warning';
             }
-
-            const hourlyRate = otBaseRate / 30 / 8;
-
-            const pay15 = hourlyRate * ot15 * 1.5;
-            const pay20 = hourlyRate * ot20 * 2.0;
-            const pay30 = hourlyRate * ot30 * 3.0;
-            const totalOT = pay15 + pay20 + pay30;
-
-            const ssoInfo = calculateSSO(ssoType, basePay);
-            const monthlyGrossIncome = basePay + totalOT + otherIncome;
-            const taxInfo = calculateProgressiveTax(monthlyGrossIncome, ssoInfo.amount);
-            const taxWithheld = enableTax ? taxInfo.monthlyTax : 0;
-
-            const totalDeductions = customDeductions + ssoInfo.amount + taxWithheld;
-            const netPay = monthlyGrossIncome - totalDeductions;
-
             return {
-                baseRate: otBaseRate,
-                hourlyRate: hourlyRate,
-                basePay: basePay,
-                pay15: pay15,
-                pay20: pay20,
-                pay30: pay30,
-                totalOT: totalOT,
-                ssoAmount: ssoInfo.amount,
-                ssoLabel: ssoInfo.label,
-                taxInfo: taxInfo,
-                taxWithheld: taxWithheld,
-                totalDeductions: totalDeductions,
-                netPay: netPay < 0 ? 0 : netPay
+                totalOtHours,
+                legalLimit,
+                excessHours,
+                status
             };
         }
 
-        // คำนวณและแสดงผลรายบุคคล
-        function calculateSingle() {
-            const name = document.getElementById('empName').value || 'พนักงาน ตัวอย่าง';
-            const type = document.getElementById('empType').value;
-            const workDays = parseFloat(document.getElementById('workDays').value) || 0;
-            const ot15 = parseFloat(document.getElementById('ot15').value) || 0;
-            const ot20 = parseFloat(document.getElementById('ot20').value) || 0;
-            const ot30 = parseFloat(document.getElementById('ot30').value) || 0;
-            const ssoType = document.getElementById('ssoType').value;
-            const enableTax = document.getElementById('enableTax').checked;
+        // แกนคำนวณเงินเดือนหลัก (ใช้ร่วมกันทั้งรายบุคคลและ Excel กลุ่ม)
+        function calculatePayrollCore(type, baseRate, workDays, ot15, ot20, ot30, otherIncome, customDeductions, ssoType = 'none', enableTax = false, customAnnualAllowance = null) {
+            const safeBase = Math.max(0, Number(baseRate) || 0);
+            const safeDays = Math.max(0, Number(workDays) || 0);
+            const safeOt15 = Math.max(0, Number(ot15) || 0);
+            const safeOt20 = Math.max(0, Number(ot20) || 0);
+            const safeOt30 = Math.max(0, Number(ot30) || 0);
+            const safeOther = Math.max(0, Number(otherIncome) || 0);
+            const safeCustomDed = Math.max(0, Number(customDeductions) || 0);
 
-            let baseRateVal = 0;
-            if (type === 'monthly') {
-                baseRateVal = parseFloat(document.getElementById('monthlySalary').value) || 0;
-            } else {
-                baseRateVal = parseFloat(document.getElementById('dailyRate').value) || 0;
-            }
+            // ฐาน OT: รายเดือน = เงินเดือน, รายวัน = ค่าจ้างรายวัน * 30
+            const otBase = type === 'monthly' ? safeBase : safeBase * 30;
+            const hourlyRate = otBase / 30 / 8;
 
-            // รวบรวมรายได้อื่นๆ แบบไดนามิก
-            let otherIncome = 0;
-            let otherListHtml = '';
-            document.querySelectorAll('.dynamic-row-other').forEach(row => {
-                const title = row.querySelectorAll('input')[0].value || 'รายได้อื่นๆ';
-                const val = parseFloat(row.querySelectorAll('input')[1].value) || 0;
-                otherIncome += val;
-                otherListHtml += `<div class="flex justify-between"><span>• ${title}:</span> <span class="text-emerald-300">${val.toLocaleString('th-TH', {minimumFractionDigits: 2})} บาท</span></div>`;
-            });
-            if (!otherListHtml) otherListHtml = '<span class="text-slate-400">ไม่มีรายการ</span>';
-            document.getElementById('otherDetails').innerHTML = otherListHtml;
+            // ค่าจ้างตามงวดงาน
+            const basePay = type === 'monthly' ? (safeBase / 30) * safeDays : safeBase * safeDays;
 
-            // รวบรวมหักอื่นๆ แบบไดนามิก
-            let customDeductions = 0;
-            let customDeductionHtml = '';
-            document.querySelectorAll('.dynamic-row-deduction').forEach(row => {
-                const title = row.querySelectorAll('input')[0].value || 'หักอื่นๆ';
-                const val = parseFloat(row.querySelectorAll('input')[1].value) || 0;
-                customDeductions += val;
-                customDeductionHtml += `<div class="flex justify-between"><span>• ${title}:</span> <span class="text-rose-300">${val.toLocaleString('th-TH', {minimumFractionDigits: 2})} บาท</span></div>`;
-            });
+            // ค่าล่วงเวลาแต่ละเรท
+            const pay15 = hourlyRate * 1.5 * safeOt15;
+            const pay20 = hourlyRate * 2.0 * safeOt20;
+            const pay30 = hourlyRate * 3.0 * safeOt30;
+            const totalOT = pay15 + pay20 + pay30;
 
-            const res = calculatePayrollCore(type, baseRateVal, workDays, ot15, ot20, ot30, otherIncome, customDeductions, ssoType, enableTax);
+            const monthlyGrossIncome = basePay + totalOT + safeOther;
+            const annualIncome = monthlyGrossIncome * 12;
 
-            // อัปเดตป้ายยอดหักประกันสังคมและภาษีในฟอร์ม
-            document.getElementById('ssoCalculatedBadge').innerText = `หัก ${res.ssoAmount.toLocaleString('th-TH', {minimumFractionDigits: 2})} บาท`;
-            document.getElementById('taxCalculatedBadge').innerText = enableTax
-                ? `หัก ${res.taxWithheld.toLocaleString('th-TH', {minimumFractionDigits: 2})} บาท/ด.`
-                : `ไม่หัก (ประมาณการ ${res.taxInfo.monthlyTax.toLocaleString('th-TH', {minimumFractionDigits: 2})} บ./ด.)`;
+            // ประกันสังคมปี 2569
+            const sso = calculateSSO(ssoType, basePay);
 
-            // รวมรายการประกันสังคม + ภาษีหัก ณ ที่จ่าย + รายการหักอื่นๆ ในกล่องสรุปแบบกดกางดูได้
-            let deductionListHtml = '';
-            if (ssoType !== 'none') {
-                deductionListHtml += `<div class="flex justify-between"><span>• ${res.ssoLabel}:</span> <span class="text-rose-300">${res.ssoAmount.toLocaleString('th-TH', {minimumFractionDigits: 2})} บาท</span></div>`;
-            }
-            if (enableTax) {
-                deductionListHtml += `<div class="flex justify-between"><span>• ภาษีเงินได้หัก ณ ที่จ่าย (ขั้นบันได ÷ 12):</span> <span class="text-rose-300">${res.taxWithheld.toLocaleString('th-TH', {minimumFractionDigits: 2})} บาท</span></div>`;
-            }
-            deductionListHtml += customDeductionHtml;
-            if (!deductionListHtml) deductionListHtml = '<span class="text-slate-400">ไม่มีรายการ</span>';
-            document.getElementById('deductionDetails').innerHTML = deductionListHtml;
+            // ลดหย่อนภาษีรวมต่อปี
+            const effectiveAnnualAllowance = customAnnualAllowance !== null
+                ? customAnnualAllowance
+                : (60000 + Math.min(sso.amount * 12, 10500));
 
-            // อัปเดตรายละเอียดภาษีขั้นบันไดแบบกางดูได้
-            const t = res.taxInfo;
-            let bracketRowsHtml = '';
-            if (t.breakdown.length === 0) {
-                bracketRowsHtml = `<div class="text-emerald-300">• เงินได้สุทธิไม่เกิน 150,000 บาท/ปี (ได้รับการยกเว้นภาษี)</div>`;
-            } else {
-                t.breakdown.forEach(b => {
-                    bracketRowsHtml += `<div class="flex justify-between"><span>• ขั้น ${b.label}:</span> <span class="text-amber-300">${b.tax.toLocaleString('th-TH', {minimumFractionDigits: 2})} บ.</span></div>`;
-                });
-            }
+            const taxInfo = calculateProgressiveTaxFromAllowance(annualIncome, effectiveAnnualAllowance);
+            const taxWithheld = enableTax ? taxInfo.monthlyTax : 0;
 
-            document.getElementById('taxBracketDetails').innerHTML = `
-                <div class="flex justify-between"><span>เงินได้ทั้งปี (งวดนี้ × 12):</span> <span>${t.annualIncome.toLocaleString('th-TH', {minimumFractionDigits: 2})} บ.</span></div>
-                <div class="flex justify-between text-slate-400"><span>หักค่าใช้จ่าย (50% สูงสุด 1 แสน):</span> <span>-${t.expenseDeduction.toLocaleString('th-TH', {minimumFractionDigits: 2})} บ.</span></div>
-                <div class="flex justify-between text-slate-400"><span>หักลดหย่อน (ส่วนตัว 60,000 + ปกส.):</span> <span>-${t.totalAllowance.toLocaleString('th-TH', {minimumFractionDigits: 2})} บ.</span></div>
-                <div class="flex justify-between font-semibold text-white border-t border-indigo-800/60 pt-1"><span>เงินได้สุทธิที่ต้องเสียภาษี/ปี:</span> <span>${t.netTaxableIncome.toLocaleString('th-TH', {minimumFractionDigits: 2})} บ.</span></div>
-                <div class="pt-1 space-y-0.5">${bracketRowsHtml}</div>
-                <div class="flex justify-between font-semibold text-indigo-200 border-t border-indigo-800/60 pt-1">
-                    <span>ภาษีรวมทั้งปี / เฉลี่ยต่อเดือน:</span>
-                    <span>${t.annualTax.toLocaleString('th-TH', {minimumFractionDigits: 2})} บ. (${t.monthlyTax.toLocaleString('th-TH', {minimumFractionDigits: 2})} บ./ด.)</span>
-                </div>
-            `;
+            const totalDeductions = sso.amount + taxWithheld + safeCustomDed;
+            const netPay = monthlyGrossIncome - totalDeductions;
 
-            document.getElementById('resMonthlyTaxSummary').innerText = enableTax
-                ? `${res.taxWithheld.toLocaleString('th-TH', {minimumFractionDigits: 2})} บาท/ด.`
-                : `0.00 บาท/ด. (ไม่หัก)`;
-
-            document.getElementById('resName').innerText = name;
-            document.getElementById('resBaseRate').innerText = res.baseRate.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' บาท';
-            document.getElementById('resBasePay').innerText = res.basePay.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' บาท';
-            document.getElementById('txtOt15').innerText = ot15;
-            document.getElementById('txtOt20').innerText = ot20;
-            document.getElementById('txtOt30').innerText = ot30;
-            document.getElementById('resPay15').innerText = res.pay15.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' บาท';
-            document.getElementById('resPay20').innerText = res.pay20.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' บาท';
-            document.getElementById('resPay30').innerText = res.pay30.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' บาท';
-            document.getElementById('resTotalOT').innerText = res.totalOT.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' บาท';
-            document.getElementById('resOther').innerText = otherIncome.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' บาท';
-            document.getElementById('resDeduction').innerText = res.totalDeductions.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' บาท';
-            document.getElementById('resNetPay').innerText = res.netPay.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            return {
+                baseRate: safeBase,
+                otBase,
+                hourlyRate,
+                basePay,
+                pay15,
+                pay20,
+                pay30,
+                totalOT,
+                monthlyGrossIncome,
+                ssoAmount: sso.amount,
+                ssoLabel: sso.label,
+                taxInfo,
+                taxWithheld,
+                totalDeductions,
+                netPay
+            };
         }
 
-        let globalBulkData = [];
+        // คำนวณและอัปเดต UI หน้าคำนวณรายบุคคล
+        function calculateSingle() {
+            try {
+                const nameEl = getEl('empName');
+                const typeEl = getEl('empType');
+                const name = (nameEl && nameEl.value.trim()) ? nameEl.value.trim() : 'ไม่ระบุชื่อพนักงาน';
+                const type = typeEl ? typeEl.value : 'monthly';
+                const baseRateVal = type === 'monthly'
+                    ? (parseFloat(getEl('monthlySalary')?.value) || 0)
+                    : (parseFloat(getEl('dailyRate')?.value) || 0);
+                const workDays = parseFloat(getEl('workDays')?.value) || 0;
+                const ot15 = parseFloat(getEl('ot15')?.value) || 0;
+                const ot20 = parseFloat(getEl('ot20')?.value) || 0;
+                const ot30 = parseFloat(getEl('ot30')?.value) || 0;
+                const ssoType = getEl('ssoType')?.value || 'none';
+                const enableTax = !!getEl('enableTax')?.checked;
 
-        function downloadTemplate() {
-            const templateData = [
+                // รวบรวมรายได้อื่นๆ
+                let otherIncome = 0;
+                const otherItems = [];
+                let otherDetailsHtml = '';
+                document.querySelectorAll('.dynamic-row-other').forEach(row => {
+                    const inputs = row.querySelectorAll('input');
+                    const title = inputs[0]?.value.trim() || 'รายได้อื่นๆ';
+                    const val = Math.max(0, parseFloat(inputs[1]?.value) || 0);
+                    otherIncome += val;
+                    if (val > 0) {
+                        otherItems.push({ title, val });
+                        otherDetailsHtml += `<div class="flex justify-between"><span>• ${title}:</span> <span class="text-emerald-300">${fmt(val)} บาท</span></div>`;
+                    }
+                });
+                setHtml('otherDetails', otherDetailsHtml || '<span class="text-slate-400">ไม่มีรายการ</span>');
+
+                // รวบรวมรายการหักอื่นๆ
+                let customDeductions = 0;
+                const customDedItems = [];
+                let customDeductionHtml = '';
+                document.querySelectorAll('.dynamic-row-deduction').forEach(row => {
+                    const inputs = row.querySelectorAll('input');
+                    const title = inputs[0]?.value.trim() || 'รายการหัก';
+                    const val = Math.max(0, parseFloat(inputs[1]?.value) || 0);
+                    customDeductions += val;
+                    if (val > 0) {
+                        customDedItems.push({ title, val });
+                        customDeductionHtml += `<div class="flex justify-between"><span>• ${title}:</span> <span class="text-rose-300">${fmt(val)} บาท</span></div>`;
+                    }
+                });
+
+                // ประมาณการรายได้ทั้งปีและประกันสังคมทั้งปีสำหรับคำนวณสิทธิ์ลดหย่อน 2569
+                const basePayPreview = type === 'monthly' ? (baseRateVal / 30) * workDays : baseRateVal * workDays;
+                const otBasePreview = type === 'monthly' ? baseRateVal : baseRateVal * 30;
+                const hourlyPreview = otBasePreview / 30 / 8;
+                const totalOtPreview = hourlyPreview * (1.5 * ot15 + 2.0 * ot20 + 3.0 * ot30);
+                const annualIncomePreview = (basePayPreview + totalOtPreview + otherIncome) * 12;
+                const ssoPreview = calculateSSO(ssoType, basePayPreview);
+                const annualSSOPreview = ssoPreview.amount * 12;
+
+                const ded2569 = collectTaxDeductions2569(annualIncomePreview, annualSSOPreview);
+                setText('totalAnnualDeductionPreview', `รวมสิทธิ์ลดหย่อนทั้งหมด ${fmtInt(ded2569.grandTotalAllowance)} บาท/ปี`);
+
+                const res = calculatePayrollCore(type, baseRateVal, workDays, ot15, ot20, ot30, otherIncome, customDeductions, ssoType, enableTax, ded2569.grandTotalAllowance);
+                const otComp = evaluateOTCompliance(workDays, ot15, ot20, ot30);
+
+                // อัปเดตแถบแจ้งเตือน OT กฎหมายแรงงาน
+                const banner = getEl('otComplianceBanner');
+                const bannerIcon = getEl('otComplianceIcon');
+                const bannerTitle = getEl('otComplianceTitle');
+                const bannerSub = getEl('otComplianceSub');
+                const resBadge = getEl('resOtComplianceBadge');
+
+                const fmtHr = (h) => Number.isInteger(h) ? h : h.toFixed(1);
+
+                if (banner && bannerIcon && bannerTitle && bannerSub && resBadge) {
+                    if (otComp.status === 'violation') {
+                        banner.className = 'p-3.5 rounded-xl border bg-rose-50 border-rose-300 text-rose-800 flex items-start space-x-2.5 text-xs transition-all';
+                        bannerIcon.className = 'fa-solid fa-triangle-exclamation text-rose-600 text-base mt-0.5 shrink-0';
+                        bannerTitle.innerText = `แจ้งเตือน: ทำ OT เกินเกณฑ์กฎหมาย! รวม ${fmtHr(otComp.totalOtHours)} ชม. (เกินกำหนด ${otComp.legalLimit} ชม. ไป ${fmtHr(otComp.excessHours)} ชม.)`;
+                        bannerSub.innerText = `อ้างอิง พ.ร.บ. คุ้มครองแรงงาน มาตรา 26: ชั่วโมงล่วงเวลาและทำงานวันหยุดรวมต้องไม่เกิน 36 ชม./สัปดาห์ (เทียบเพดาน ${otComp.legalLimit} ชม. สำหรับ ${workDays} วันทำงาน)`;
+
+                        resBadge.className = 'px-2.5 py-0.5 bg-rose-500/30 text-rose-200 text-[11px] rounded-full font-semibold border border-rose-400/50';
+                        resBadge.innerText = `OT เกินกฎหมาย (+${fmtHr(otComp.excessHours)} ชม.)`;
+                    } else if (otComp.status === 'warning') {
+                        banner.className = 'p-3.5 rounded-xl border bg-amber-50 border-amber-300 text-amber-900 flex items-start space-x-2.5 text-xs transition-all';
+                        bannerIcon.className = 'fa-solid fa-circle-exclamation text-amber-600 text-base mt-0.5 shrink-0';
+                        bannerTitle.innerText = `เฝ้าระวัง: ชั่วโมง OT รวม ${fmtHr(otComp.totalOtHours)} ชม. ใกล้เกินเพดานกฎหมาย (${otComp.legalLimit} ชม.)`;
+                        bannerSub.innerText = `เหลือโควตาอีก ${fmtHr(otComp.legalLimit - otComp.totalOtHours)} ชม. ควรติดตามภาระงานและความเหนื่อยล้า (Burnout) ของพนักงาน`;
+
+                        resBadge.className = 'px-2.5 py-0.5 bg-amber-500/30 text-amber-200 text-[11px] rounded-full font-semibold border border-amber-400/50';
+                        resBadge.innerText = `OT ใกล้เต็มเพดาน (${fmtHr(otComp.totalOtHours)}/${otComp.legalLimit} ชม.)`;
+                    } else {
+                        banner.className = 'p-3.5 rounded-xl border bg-emerald-50 border-emerald-200 text-emerald-800 flex items-start space-x-2.5 text-xs transition-all';
+                        bannerIcon.className = 'fa-solid fa-circle-check text-emerald-600 text-base mt-0.5 shrink-0';
+                        bannerTitle.innerText = `ชั่วโมง OT รวม ${fmtHr(otComp.totalOtHours)} ชม. (อยู่ในเกณฑ์กฎหมายไม่เกิน ${otComp.legalLimit} ชม.)`;
+                        bannerSub.innerText = `อ้างอิง พ.ร.บ. คุ้มครองแรงงาน มาตรา 26: กำหนดชั่วโมง OT และทำงานวันหยุดรวมไม่เกิน 36 ชม./สัปดาห์`;
+
+                        resBadge.className = 'px-2.5 py-0.5 bg-emerald-500/20 text-emerald-300 text-[11px] rounded-full font-medium border border-emerald-400/30';
+                        resBadge.innerText = `OT ปกติ (${fmtHr(otComp.totalOtHours)}/${otComp.legalLimit} ชม.)`;
+                    }
+                }
+
+                // อัปเดตแถบค่าจ้างและอัตรา OT ต่อชั่วโมงในการ์ดซ้าย
+                setText('inlinePeriodWage', fmt(res.basePay) + ' บาท');
+                setText('inlineBaseOT', fmt(res.otBase) + ' บาท');
+                setText('inlineHourlyRate', fmt(res.hourlyRate) + ' บาท/ชม.');
+
+                setText('rate15Label', fmt(res.hourlyRate * 1.5) + ' บ./ชม.');
+                setText('rate20Label', fmt(res.hourlyRate * 2.0) + ' บ./ชม.');
+                setText('rate30Label', fmt(res.hourlyRate * 3.0) + ' บ./ชม.');
+                setText('subPay15Label', fmt(res.pay15) + ' บ.');
+                setText('subPay20Label', fmt(res.pay20) + ' บ.');
+                setText('subPay30Label', fmt(res.pay30) + ' บ.');
+                setText('inlineTotalOTBadge', `รวมค่า OT: ${fmt(res.totalOT)} บาท`);
+
+                setText('ssoCalculatedBadge', `หัก ${fmt(res.ssoAmount)} บาท`);
+                setText('taxCalculatedBadge', enableTax
+                    ? `หัก ${fmt(res.taxWithheld)} บาท/ด.`
+                    : `ไม่หัก (ประมาณการ ${fmt(res.taxInfo.monthlyTax)} บ./ด.)`);
+
+                let deductionListHtml = '';
+                if (ssoType !== 'none') {
+                    deductionListHtml += `<div class="flex justify-between"><span>• ${res.ssoLabel}:</span> <span class="text-rose-300">${fmt(res.ssoAmount)} บาท</span></div>`;
+                }
+                if (enableTax) {
+                    deductionListHtml += `<div class="flex justify-between"><span>• ภาษีหัก ณ ที่จ่าย (ขั้นบันได ÷ 12):</span> <span class="text-rose-300">${fmt(res.taxWithheld)} บาท</span></div>`;
+                }
+                deductionListHtml += customDeductionHtml;
+                setHtml('deductionDetails', deductionListHtml || '<span class="text-slate-400">ไม่มีรายการ</span>');
+
+                // รายละเอียดภาษีขั้นบันได (ประมาณการรายปี)
+                const t = res.taxInfo;
+                const bracketRowsHtml = t.breakdown.length === 0
+                    ? `<div class="text-emerald-300">• เงินได้สุทธิไม่เกิน 150,000 บาท/ปี (ยกเว้นภาษี 0%)</div>`
+                    : t.breakdown.map(b => `<div class="flex justify-between"><span>• ขั้น ${b.label}:</span> <span class="text-amber-300">${fmt(b.tax)} บ.</span></div>`).join('');
+
+                const dedItemsSummaryHtml = ded2569.items.map(it => `<div class="flex justify-between text-[11px] text-slate-400"><span>- ${it.name}:</span><span>${fmtInt(it.amount)} บ.</span></div>`).join('');
+
+                setHtml('taxBracketDetails', `
+                    <div class="flex justify-between"><span>เงินได้ทั้งปี (งวดนี้ × 12):</span> <span>${fmt(t.annualIncome)} บ.</span></div>
+                    <div class="flex justify-between text-slate-400"><span>หักค่าใช้จ่าย (50% สูงสุด 1 แสน):</span> <span>-${fmt(t.expenseDeduction)} บ.</span></div>
+                    <div class="flex justify-between text-indigo-200 font-medium"><span>รวมลดหย่อนปี 2569 (${ded2569.items.length} รายการ):</span> <span>-${fmt(t.totalAllowance)} บ.</span></div>
+                    <div class="pl-2 space-y-0.5 border-l border-indigo-700/60 my-1">${dedItemsSummaryHtml}</div>
+                    <div class="flex justify-between font-semibold text-white border-t border-indigo-800/60 pt-1"><span>เงินได้สุทธิที่ต้องเสียภาษี/ปี:</span> <span>${fmt(t.netTaxableIncome)} บ.</span></div>
+                    <div class="pt-1 space-y-0.5">${bracketRowsHtml}</div>
+                    <div class="flex justify-between font-semibold text-indigo-200 border-t border-indigo-800/60 pt-1">
+                        <span>ภาษีรวมทั้งปี / เฉลี่ยต่อเดือน:</span>
+                        <span>${fmt(t.annualTax)} บ. (${fmt(t.monthlyTax)} บ./ด.)</span>
+                    </div>
+                `);
+
+                setText('resMonthlyTaxSummary', enableTax
+                    ? `${fmt(res.taxWithheld)} บาท/ด.`
+                    : `0.00 บาท/ด. (ไม่หัก)`);
+
+                // อัปเดตกล่องสรุปขวา
+                setText('resName', name);
+                setText('resBaseRate', fmt(res.otBase) + ' บาท');
+                setText('resBasePay', fmt(res.basePay) + ' บาท');
+                setText('txtOt15', ot15);
+                setText('txtOt20', ot20);
+                setText('txtOt30', ot30);
+                setText('resPay15', fmt(res.pay15) + ' บาท');
+                setText('resPay20', fmt(res.pay20) + ' บาท');
+                setText('resPay30', fmt(res.pay30) + ' บาท');
+                setText('resTotalOT', fmt(res.totalOT) + ' บาท');
+                setText('resOther', fmt(otherIncome) + ' บาท');
+                setText('resGrossIncome', fmt(res.monthlyGrossIncome) + ' บาท');
+                setText('resDeduction', fmt(res.totalDeductions) + ' บาท');
+                setText('resNetPay', fmt(res.netPay));
+
+                latestSingleState = {
+                    name,
+                    typeLabel: type === 'monthly' ? 'พนักงานรายเดือน' : 'พนักงานรายวัน',
+                    workDays,
+                    res,
+                    otherItems,
+                    customDedItems,
+                    ssoType,
+                    enableTax,
+                    totalAllowance: ded2569.grandTotalAllowance
+                };
+            } catch (err) {
+                console.error('Calculation error:', err);
+            }
+        }
+
+        // Demo Presets 4 แบบ
+        function applyDemoPreset(preset) {
+            const allChks = [
+                'ded_spouse', 'ded_child1_chk', 'ded_child2_chk', 'ded_maternity_chk', 'ded_parents_chk', 'ded_disabled_chk',
+                'ded_life_chk', 'ded_health_chk', 'ded_parent_health_chk', 'ded_spouse_life_chk', 'ded_thaiesg_chk', 'ded_thaiesgx_ltf_chk',
+                'ded_rmf_chk', 'ded_pvd_chk', 'ded_gpf_chk', 'ded_teacher_chk', 'ded_annuity_chk', 'ded_nsf_chk',
+                'ded_home_interest_chk', 'ded_art_chk', 'ded_se_chk', 'ded_cctv_chk', 'ded_solar_chk',
+                'ded_party_chk', 'ded_edu2x_chk', 'ded_general_don_chk'
+            ];
+            allChks.forEach(id => {
+                const el = getEl(id);
+                if (el) el.checked = false;
+            });
+            const allInputs = [
+                'ded_child1_qty', 'ded_child2_qty', 'ded_maternity_amt', 'ded_parents_qty', 'ded_disabled_qty',
+                'ded_life_amt', 'ded_health_amt', 'ded_parent_health_amt', 'ded_spouse_life_amt', 'ded_thaiesg_amt', 'ded_thaiesgx_ltf_amt',
+                'ded_rmf_amt', 'ded_pvd_amt', 'ded_gpf_amt', 'ded_teacher_amt', 'ded_annuity_amt', 'ded_nsf_amt',
+                'ded_home_interest_amt', 'ded_art_amt', 'ded_se_amt', 'ded_cctv_amt', 'ded_solar_amt',
+                'ded_party_amt', 'ded_edu2x_amt', 'ded_general_don_amt'
+            ];
+            allInputs.forEach(id => {
+                const el = getEl(id);
+                if (el) el.value = 0;
+            });
+
+            const otherContainer = getEl('otherIncomeContainer');
+            const dedContainer = getEl('deductionContainer');
+            if (otherContainer) otherContainer.innerHTML = '';
+            if (dedContainer) dedContainer.innerHTML = '';
+
+            if (preset === 'staff_m33') {
+                if (getEl('empName')) getEl('empName').value = 'น.ส. ปนัดดา ใจดี';
+                if (getEl('empType')) getEl('empType').value = 'monthly';
+                toggleEmpType(false);
+                if (getEl('monthlySalary')) getEl('monthlySalary').value = 25000;
+                if (getEl('workDays')) getEl('workDays').value = 30;
+                if (getEl('ot15')) getEl('ot15').value = 6;
+                if (getEl('ot20')) getEl('ot20').value = 0;
+                if (getEl('ot30')) getEl('ot30').value = 0;
+                if (getEl('ssoType')) getEl('ssoType').value = '33';
+                if (getEl('enableTax')) getEl('enableTax').checked = true;
+                addDynamicRow('other', 'เบี้ยขยัน', 1500);
+                addDynamicRow('deduction', 'หักอื่นๆ', 0);
+            } else if (preset === 'supervisor_tax') {
+                if (getEl('empName')) getEl('empName').value = 'นาย ภาคิน รัตนวงศ์';
+                if (getEl('empType')) getEl('empType').value = 'monthly';
+                toggleEmpType(false);
+                if (getEl('monthlySalary')) getEl('monthlySalary').value = 45000;
+                if (getEl('workDays')) getEl('workDays').value = 30;
+                if (getEl('ot15')) getEl('ot15').value = 4;
+                if (getEl('ot20')) getEl('ot20').value = 8;
+                if (getEl('ot30')) getEl('ot30').value = 0;
+                if (getEl('ssoType')) getEl('ssoType').value = '33';
+                if (getEl('enableTax')) getEl('enableTax').checked = true;
+                addDynamicRow('other', 'ค่าตำแหน่ง', 3000);
+                addDynamicRow('deduction', 'หักอื่นๆ', 0);
+
+                if (getEl('ded_parents_chk')) getEl('ded_parents_chk').checked = true;
+                if (getEl('ded_parents_qty')) getEl('ded_parents_qty').value = 2;
+                if (getEl('ded_life_chk')) getEl('ded_life_chk').checked = true;
+                if (getEl('ded_life_amt')) getEl('ded_life_amt').value = 25000;
+            } else if (preset === 'daily_factory') {
+                if (getEl('empName')) getEl('empName').value = 'นาย สมชาย มั่นคง';
+                if (getEl('empType')) getEl('empType').value = 'daily';
+                toggleEmpType(false);
+                if (getEl('dailyRate')) getEl('dailyRate').value = 550;
+                if (getEl('workDays')) getEl('workDays').value = 26;
+                if (getEl('ot15')) getEl('ot15').value = 10;
+                if (getEl('ot20')) getEl('ot20').value = 0;
+                if (getEl('ot30')) getEl('ot30').value = 4;
+                if (getEl('ssoType')) getEl('ssoType').value = '33';
+                if (getEl('enableTax')) getEl('enableTax').checked = true;
+                addDynamicRow('other', 'เบี้ยขยัน', 1000);
+                addDynamicRow('deduction', 'หักอื่นๆ', 0);
+            } else if (preset === 'ot_overload') {
+                if (getEl('empName')) getEl('empName').value = 'นาย วิชัย เร่งงานหนัก (เคสทดสอบเกินเกณฑ์)';
+                if (getEl('empType')) getEl('empType').value = 'monthly';
+                toggleEmpType(false);
+                if (getEl('monthlySalary')) getEl('monthlySalary').value = 22000;
+                if (getEl('workDays')) getEl('workDays').value = 7;
+                if (getEl('ot15')) getEl('ot15').value = 24;
+                if (getEl('ot20')) getEl('ot20').value = 12;
+                if (getEl('ot30')) getEl('ot30').value = 8;
+                if (getEl('ssoType')) getEl('ssoType').value = '33';
+                if (getEl('enableTax')) getEl('enableTax').checked = true;
+                addDynamicRow('other', 'ค่าเดินทาง', 0);
+                addDynamicRow('deduction', 'หักอื่นๆ', 0);
+            }
+
+            calculateSingle();
+        }
+
+        // เปิดหน้าต่างใบสลิปเงินเดือน (Payslip View)
+        function renderPayslipModal(stateObj) {
+            if (!stateObj) return;
+            const s = stateObj;
+            const r = s.res;
+
+            setText('slipEmpName', s.name);
+            setText('slipEmpType', s.typeLabel);
+            setText('slipWorkDays', `วันทำงาน ${s.workDays} วัน`);
+
+            let earnHtml = `<div class="flex justify-between"><span>ค่าจ้างตามงวดงาน</span><span>${fmt(r.basePay)} บ.</span></div>`;
+            if (r.totalOT > 0) {
+                earnHtml += `<div class="flex justify-between"><span>ค่าล่วงเวลา (OT รวม)</span><span>${fmt(r.totalOT)} บ.</span></div>`;
+            }
+            (s.otherItems || []).forEach(it => {
+                earnHtml += `<div class="flex justify-between"><span>${it.title}</span><span>${fmt(it.val)} บ.</span></div>`;
+            });
+            setHtml('slipEarningsList', earnHtml);
+            setText('slipTotalEarnings', fmt(r.monthlyGrossIncome) + ' บาท');
+
+            let dedHtml = '';
+            if (s.ssoType !== 'none' && r.ssoAmount > 0) {
+                dedHtml += `<div class="flex justify-between"><span>${r.ssoLabel}</span><span>${fmt(r.ssoAmount)} บ.</span></div>`;
+            }
+            if (s.enableTax) {
+                dedHtml += `<div class="flex justify-between"><span>ภาษีหัก ณ ที่จ่าย (ขั้นบันได)</span><span>${fmt(r.taxWithheld)} บ.</span></div>`;
+            }
+            (s.customDedItems || []).forEach(it => {
+                dedHtml += `<div class="flex justify-between"><span>${it.title}</span><span>${fmt(it.val)} บ.</span></div>`;
+            });
+            setHtml('slipDeductionsList', dedHtml || '<div class="text-slate-400">ไม่มีรายการหัก</div>');
+            setText('slipTotalDeductions', fmt(r.totalDeductions) + ' บาท');
+            setText('slipTaxNote', `สิทธิ์ลดหย่อนภาษีปี 2569 รวม ${fmtInt(s.totalAllowance)} บาท/ปี`);
+            setText('slipNetPay', fmt(r.netPay) + ' บาท');
+
+            const modal = getEl('payslipModal');
+            if (modal) {
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+            }
+        }
+
+        function openPayslipModalFromSingle() {
+            if (!latestSingleState) calculateSingle();
+            renderPayslipModal(latestSingleState);
+        }
+
+        function openPayslipModalFromBulk(idx) {
+            const rec = bulkProcessedRecords[idx];
+            if (!rec) return;
+            renderPayslipModal(rec);
+        }
+
+        function closePayslipModal() {
+            const modal = getEl('payslipModal');
+            if (modal) {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }
+        }
+
+        // ================= ส่วนประมวลผล Excel (กลุ่ม) =================
+        function getRealisticSampleRows() {
+            return [
                 {
-                    "name": "สมชาย ใจดี",
+                    "name": "น.ส. ปนัดดา ใจดี",
                     "type": "monthly",
-                    "salary_or_daily": 35000,
+                    "salary_or_daily": 25000,
                     "work_days": 30,
-                    "sso_type": "33",
-                    "calc_tax": 1,
-                    "ot15": 10,
-                    "ot20": 5,
+                    "ot15": 6,
+                    "ot20": 0,
                     "ot30": 0,
-                    "other_income": 1000,
-                    "deductions": 200
+                    "other_income": 1500,
+                    "other_deduction": 0,
+                    "sso_type": "33",
+                    "auto_tax": "yes"
                 },
                 {
-                    "name": "สมหญิง รักงาน",
+                    "name": "นาย ภาคิน รัตนวงศ์",
+                    "type": "monthly",
+                    "salary_or_daily": 42000,
+                    "work_days": 30,
+                    "ot15": 4,
+                    "ot20": 8,
+                    "ot30": 0,
+                    "other_income": 3000,
+                    "other_deduction": 0,
+                    "sso_type": "33",
+                    "auto_tax": "yes"
+                },
+                {
+                    "name": "นาย สมชาย มั่นคง",
                     "type": "daily",
                     "salary_or_daily": 550,
                     "work_days": 26,
-                    "sso_type": "39",
-                    "calc_tax": 1,
-                    "ot15": 8,
+                    "ot15": 10,
                     "ot20": 0,
-                    "ot30": 2,
-                    "other_income": 500,
-                    "deductions": 0
+                    "ot30": 4,
+                    "other_income": 1000,
+                    "other_deduction": 0,
+                    "sso_type": "33",
+                    "auto_tax": "yes"
+                },
+                {
+                    "name": "น.ส. กนกวรรณ ศรีสุข",
+                    "type": "daily",
+                    "salary_or_daily": 600,
+                    "work_days": 18,
+                    "ot15": 3,
+                    "ot20": 0,
+                    "ot30": 0,
+                    "other_income": 0,
+                    "other_deduction": 0,
+                    "sso_type": "40_3",
+                    "auto_tax": "no"
+                },
+                {
+                    "name": "นาย ธีรภัทร วงศ์สุวรรณ",
+                    "type": "monthly",
+                    "salary_or_daily": 18000,
+                    "work_days": 30,
+                    "ot15": 0,
+                    "ot20": 0,
+                    "ot30": 0,
+                    "other_income": 0,
+                    "other_deduction": 0,
+                    "sso_type": "39",
+                    "auto_tax": "yes"
                 }
             ];
+        }
 
+        function downloadTemplate() {
+            if (typeof XLSX === 'undefined') {
+                showBulkError('ไม่สามารถโหลดไลบรารี Excel ได้ในขณะนี้ กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ต หรือใช้ปุ่ม "จำลองข้อมูลตัวอย่าง 5 คนทันที"');
+                return;
+            }
+            const templateData = getRealisticSampleRows();
             const ws = XLSX.utils.json_to_sheet(templateData);
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, "EmployeeTemplate");
-            XLSX.writeFile(wb, "payroll_template.xlsx");
+            XLSX.writeFile(wb, "payroll_template_2569.xlsx");
+        }
+
+        function loadSampleIntoBulk() {
+            const errBox = getEl('bulkErrorBox');
+            if (errBox) errBox.classList.add('hidden');
+            processBulkData(getRealisticSampleRows());
+        }
+
+        function showBulkError(msg) {
+            setText('bulkErrorText', msg);
+            const errBox = getEl('bulkErrorBox');
+            if (errBox) errBox.classList.remove('hidden');
         }
 
         function handleFile(e) {
-            const file = e.target.files[0];
+            const file = e.target.files ? e.target.files[0] : null;
             if (!file) return;
+            const errBox = getEl('bulkErrorBox');
+            if (errBox) errBox.classList.add('hidden');
+
+            if (typeof XLSX === 'undefined') {
+                showBulkError('ไม่สามารถโหลดตัวอ่านไฟล์ Excel ได้ กรุณาตรวจสอบอินเทอร์เน็ตแล้วลองใหม่');
+                return;
+            }
 
             const reader = new FileReader();
-            reader.onload = function(e) {
+            reader.onload = function(evt) {
                 try {
-                    const data = new Uint8Array(e.target.result);
+                    const data = new Uint8Array(evt.target.result);
                     const workbook = XLSX.read(data, { type: 'array' });
                     const firstSheetName = workbook.SheetNames[0];
                     const worksheet = workbook.Sheets[firstSheetName];
                     const json = XLSX.utils.sheet_to_json(worksheet);
-
+                    if (!json || json.length === 0) {
+                        showBulkError('ไม่พบข้อมูลแถวพนักงานในไฟล์ที่อัปโหลด กรุณาตรวจสอบหัวตารางตามไฟล์ตัวอย่าง');
+                        return;
+                    }
                     processBulkData(json);
                 } catch (error) {
-                    alert('เกิดข้อผิดพลาดในการอ่านไฟล์ กรุณาตรวจสอบรูปแบบไฟล์ Excel อีกครั้ง');
                     console.error(error);
+                    showBulkError('เกิดข้อผิดพลาดในการอ่านไฟล์ กรุณาตรวจสอบว่าเป็นไฟล์ .xlsx, .xls หรือ .csv ที่ถูกต้อง');
                 }
             };
             reader.readAsArrayBuffer(file);
         }
 
         function processBulkData(rows) {
-            globalBulkData = [];
+            bulkProcessedRecords = [];
+            globalBulkExportData = [];
             let totalNetSum = 0;
+            let totalEmployerSSO = 0;
+            let totalOrgCost = 0;
+            let totalOTCost = 0;
+            let sumOt15 = 0, sumOt20 = 0, sumOt30 = 0;
+            let violationCount = 0;
 
-            const tbody = document.getElementById('resultTableBody');
+            const tbody = getEl('resultTableBody');
+            if (!tbody) return;
             tbody.innerHTML = '';
 
             rows.forEach((row, index) => {
                 const name = row.name || row.Name || `พนักงาน ${index + 1}`;
-                const type = (row.type || row.Type || 'monthly').toString().toLowerCase().includes('day') || (row.type || '').includes('รายวัน') ? 'daily' : 'monthly';
-                const baseRate = parseFloat(row.salary_or_daily || row.Salary || row.rate || 0);
-                const workDays = parseFloat(row.work_days || row.Days || 30);
-                const ssoType = row.sso_type || row.SSO || 'none';
-                const calcTaxFlag = row.calc_tax !== undefined ? Number(row.calc_tax) !== 0 : true;
-                const ot15 = parseFloat(row.ot15 || row.OT15 || 0);
-                const ot20 = parseFloat(row.ot20 || row.OT20 || 0);
-                const ot30 = parseFloat(row.ot30 || row.OT30 || 0);
-                const otherIncome = parseFloat(row.other_income || row.Other || 0);
-                const customDeductions = parseFloat(row.deductions || row.Deduction || 0);
+                const rawType = (row.type || row.Type || 'monthly').toString().toLowerCase();
+                const type = (rawType.includes('day') || rawType.includes('daily') || rawType.includes('รายวัน')) ? 'daily' : 'monthly';
+                const baseRate = parseFloat(row.salary_or_daily ?? row.Salary ?? row.rate ?? 0) || 0;
+                const workDays = parseFloat(row.work_days ?? row.Days ?? (type === 'monthly' ? 30 : 26)) || 0;
+                const ssoType = (row.sso_type ?? row.SSO ?? 'none').toString().trim();
 
-                const res = calculatePayrollCore(type, baseRate, workDays, ot15, ot20, ot30, otherIncome, customDeductions, ssoType, calcTaxFlag);
+                const rawAutoTax = row.auto_tax !== undefined ? row.auto_tax : (row.calc_tax !== undefined ? row.calc_tax : 'yes');
+                const taxStr = rawAutoTax.toString().trim().toLowerCase();
+                const enableTax = !(taxStr === 'no' || taxStr === '0' || taxStr === 'false');
+
+                const ot15 = parseFloat(row.ot15 ?? row.OT15 ?? 0) || 0;
+                const ot20 = parseFloat(row.ot20 ?? row.OT20 ?? 0) || 0;
+                const ot30 = parseFloat(row.ot30 ?? row.OT30 ?? 0) || 0;
+                const otherIncome = parseFloat(row.other_income ?? row.Other ?? 0) || 0;
+                const customDeductions = parseFloat(row.other_deduction ?? row.deductions ?? row.Deduction ?? 0) || 0;
+
+                const basePayPreview = type === 'monthly' ? (baseRate / 30) * workDays : baseRate * workDays;
+                const ssoPreview = calculateSSO(ssoType, basePayPreview);
+                const annualAllowance = 60000 + Math.min(ssoPreview.amount * 12, 10500);
+
+                const res = calculatePayrollCore(type, baseRate, workDays, ot15, ot20, ot30, otherIncome, customDeductions, ssoType, enableTax, annualAllowance);
+                const otComp = evaluateOTCompliance(workDays, ot15, ot20, ot30);
+                if (otComp.status === 'violation') violationCount++;
+
+                const empSSOEmployer = ssoType === '33' ? res.ssoAmount : 0;
                 totalNetSum += res.netPay;
+                totalEmployerSSO += empSSOEmployer;
+                totalOrgCost += (res.monthlyGrossIncome + empSSOEmployer);
+                totalOTCost += res.totalOT;
+                sumOt15 += ot15;
+                sumOt20 += ot20;
+                sumOt30 += ot30;
 
-                const resultRecord = {
+                bulkProcessedRecords.push({
+                    name,
+                    typeLabel: type === 'monthly' ? 'พนักงานรายเดือน' : 'พนักงานรายวัน',
+                    workDays,
+                    res,
+                    otherItems: otherIncome > 0 ? [{ title: 'รายได้อื่นๆ', val: otherIncome }] : [],
+                    customDedItems: customDeductions > 0 ? [{ title: 'รายการหักอื่นๆ', val: customDeductions }] : [],
+                    ssoType,
+                    enableTax,
+                    totalAllowance: annualAllowance
+                });
+
+                globalBulkExportData.push({
                     "ลำดับ": index + 1,
                     "ชื่อ-นามสกุล": name,
                     "ประเภท": type === 'monthly' ? 'รายเดือน' : 'รายวัน',
@@ -784,54 +2048,134 @@
                     "ชม. OT 3.0": ot30,
                     "เงิน OT 3.0": res.pay30,
                     "ค่า OT รวม": res.totalOT,
+                    "สถานะ OT กฎหมาย (ม.26)": otComp.status === 'violation'
+                        ? `เกินกฎหมาย (+${otComp.excessHours} ชม. / เพดาน ${otComp.legalLimit} ชม.)`
+                        : `ปกติ (${otComp.totalOtHours}/${otComp.legalLimit} ชม.)`,
                     "รายได้อื่นๆ": otherIncome,
                     "ประเภทประกันสังคม": res.ssoLabel,
                     "หักประกันสังคม": res.ssoAmount,
+                    "สมทบประกันสังคมนายจ้าง": empSSOEmployer,
+                    "ลดหย่อนรวมต่อปี": annualAllowance,
                     "เงินได้สุทธิต่อปี": res.taxInfo.netTaxableIncome,
                     "ภาษีทั้งปี (ขั้นบันได)": res.taxInfo.annualTax,
                     "ภาษีหัก ณ ที่จ่ายต่องวด": res.taxWithheld,
                     "หักอื่นๆ": customDeductions,
                     "ยอดสุทธิ": res.netPay
-                };
-                globalBulkData.push(resultRecord);
+                });
+
+                const ssoDisplayTag = ssoType !== 'none'
+                    ? (ssoType === '33' ? 'ม.33' : (ssoType === '39' ? 'ม.39' : 'ม.' + ssoType.replace('_', ' ทางเลือก ')))
+                    : '-';
+
+                const otViolationBadge = otComp.status === 'violation'
+                    ? `<span class="mt-1 inline-flex items-center space-x-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-rose-100 text-rose-700 border border-rose-200"><i class="fa-solid fa-triangle-exclamation"></i><span>OT เกินกฎหมาย (+${otComp.excessHours}ชม.)</span></span>`
+                    : (otComp.status === 'warning'
+                        ? `<span class="mt-1 inline-flex items-center space-x-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-100 text-amber-800 border border-amber-200"><span>OT ใกล้เต็มเพดาน</span></span>`
+                        : '');
 
                 const tr = document.createElement('tr');
-                tr.className = "hover:bg-slate-50 transition";
+                tr.className = otComp.status === 'violation' ? "bg-rose-50/40 hover:bg-rose-50 transition" : "hover:bg-slate-50 transition";
                 tr.innerHTML = `
                     <td class="p-3 font-medium">${index + 1}</td>
-                    <td class="p-3 font-semibold text-slate-800">${name}</td>
-                    <td class="p-3"><span class="px-2.5 py-1 rounded-full text-xs font-medium ${type === 'monthly' ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700'}">${type === 'monthly' ? 'รายเดือน' : 'รายวัน'}</span></td>
-                    <td class="p-3 text-right">${baseRate.toLocaleString('th-TH', {minimumFractionDigits: 2})}</td>
+                    <td class="p-3 font-semibold text-slate-800 whitespace-nowrap">
+                        <div>${name}</div>
+                        ${otViolationBadge}
+                    </td>
+                    <td class="p-3 whitespace-nowrap"><span class="px-2.5 py-1 rounded-full text-xs font-medium ${type === 'monthly' ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700'}">${type === 'monthly' ? 'รายเดือน' : 'รายวัน'}</span></td>
+                    <td class="p-3 text-right">${fmt(baseRate)}</td>
                     <td class="p-3 text-center">${workDays}</td>
-                    <td class="p-3 text-right">${res.basePay.toLocaleString('th-TH', {minimumFractionDigits: 2})}</td>
-                    <td class="p-3 text-right">${res.pay15.toLocaleString('th-TH', {minimumFractionDigits: 2})} <span class="text-xs text-slate-400">(${ot15}ชม.)</span></td>
-                    <td class="p-3 text-right">${res.pay20.toLocaleString('th-TH', {minimumFractionDigits: 2})} <span class="text-xs text-slate-400">(${ot20}ชม.)</span></td>
-                    <td class="p-3 text-right">${res.pay30.toLocaleString('th-TH', {minimumFractionDigits: 2})} <span class="text-xs text-slate-400">(${ot30}ชม.)</span></td>
-                    <td class="p-3 text-right text-amber-600 font-medium">${res.totalOT.toLocaleString('th-TH', {minimumFractionDigits: 2})}</td>
-                    <td class="p-3 text-right text-emerald-600">${otherIncome.toLocaleString('th-TH', {minimumFractionDigits: 2})}</td>
-                    <td class="p-3 text-right text-rose-600">${res.ssoAmount.toLocaleString('th-TH', {minimumFractionDigits: 2})} <span class="block text-[10px] text-slate-400">${ssoType !== 'none' ? 'ม.' + ssoType.replace('_', ' ทางเลือก ') : '-'}</span></td>
-                    <td class="p-3 text-right text-indigo-600 font-medium">${res.taxWithheld.toLocaleString('th-TH', {minimumFractionDigits: 2})} <span class="block text-[10px] text-slate-400">ทั้งปี ${res.taxInfo.annualTax.toLocaleString('th-TH', {maximumFractionDigits: 0})} บ.</span></td>
-                    <td class="p-3 text-right text-rose-600">${customDeductions.toLocaleString('th-TH', {minimumFractionDigits: 2})}</td>
-                    <td class="p-3 text-right font-bold text-indigo-700">${res.netPay.toLocaleString('th-TH', {minimumFractionDigits: 2})}</td>
+                    <td class="p-3 text-right">${fmt(res.basePay)}</td>
+                    <td class="p-3 text-right whitespace-nowrap">${fmt(res.pay15)} <span class="text-xs text-slate-400">(${ot15}ชม.)</span></td>
+                    <td class="p-3 text-right whitespace-nowrap">${fmt(res.pay20)} <span class="text-xs text-slate-400">(${ot20}ชม.)</span></td>
+                    <td class="p-3 text-right whitespace-nowrap">${fmt(res.pay30)} <span class="text-xs text-slate-400">(${ot30}ชม.)</span></td>
+                    <td class="p-3 text-right text-amber-600 font-semibold">${fmt(res.totalOT)}</td>
+                    <td class="p-3 text-right text-emerald-600">${fmt(otherIncome)}</td>
+                    <td class="p-3 text-right text-rose-600 whitespace-nowrap">${fmt(res.ssoAmount)} <span class="block text-[10px] text-slate-400">${ssoDisplayTag}</span></td>
+                    <td class="p-3 text-right text-indigo-600 font-medium whitespace-nowrap">${fmt(res.taxWithheld)} <span class="block text-[10px] text-slate-400">${enableTax ? 'ทั้งปี ' + fmtInt(res.taxInfo.annualTax) + ' บ.' : 'ไม่หักภาษี'}</span></td>
+                    <td class="p-3 text-right text-rose-600">${fmt(customDeductions)}</td>
+                    <td class="p-3 text-right font-bold text-indigo-700 whitespace-nowrap">${fmt(res.netPay)}</td>
+                    <td class="p-3 text-center">
+                        <button type="button" onclick="openPayslipModalFromBulk(${index})" class="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg text-xs font-medium transition">
+                            <i class="fa-solid fa-receipt"></i>
+                        </button>
+                    </td>
                 `;
                 tbody.appendChild(tr);
             });
 
-            document.getElementById('summaryStats').innerText = `พบพนักงานทั้งหมด ${rows.length} คน | ยอดจ่ายสุทธิรวม ${totalNetSum.toLocaleString('th-TH', {minimumFractionDigits: 2})} บาท`;
-            document.getElementById('bulkResultSection').classList.remove('hidden');
+            const totalOtHours = sumOt15 + sumOt20 + sumOt30;
+            const p15 = totalOtHours > 0 ? (sumOt15 / totalOtHours) * 100 : 0;
+            const p20 = totalOtHours > 0 ? (sumOt20 / totalOtHours) * 100 : 0;
+            const p30 = totalOtHours > 0 ? (sumOt30 / totalOtHours) * 100 : 0;
+
+            setText('summaryStats', `พบพนักงานทั้งหมด ${rows.length} คน | ยอดจ่ายสุทธิรวม ${fmt(totalNetSum)} บาท`);
+            setText('cardTotalNetPay', `${fmt(totalNetSum)} บาท`);
+            setText('cardEmpCount', `พนักงาน ${rows.length} คน`);
+            setText('cardEmployerSSO', `${fmt(totalEmployerSSO)} บาท`);
+            setText('cardTotalOrgCost', `${fmt(totalOrgCost)} บาท`);
+            setText('cardTotalOTCost', `${fmt(totalOTCost)} บาท`);
+            if (getEl('barOt15')) getEl('barOt15').style.width = `${p15}%`;
+            if (getEl('barOt20')) getEl('barOt20').style.width = `${p20}%`;
+            if (getEl('barOt30')) getEl('barOt30').style.width = `${p30}%`;
+            setText('cardOTHoursSplit', `1.5: ${sumOt15}ชม. | 2.0: ${sumOt20}ชม. | 3.0: ${sumOt30}ชม.`);
+
+            const violationEl = getEl('cardOTViolationCount');
+            if (violationEl) {
+                if (violationCount > 0) {
+                    violationEl.className = 'text-[11px] font-bold text-rose-600 pt-0.5';
+                    violationEl.innerHTML = `<i class="fa-solid fa-triangle-exclamation mr-1"></i>พบพนักงานทำ OT เกินกฎหมาย ${violationCount} คน`;
+                } else {
+                    violationEl.className = 'text-[11px] font-semibold text-emerald-700 pt-0.5';
+                    violationEl.innerHTML = `<i class="fa-solid fa-circle-check mr-1"></i>ผ่านเกณฑ์ OT กฎหมายทุกคน (0 คนเกินกำหนด)`;
+                }
+            }
+
+            const bulkResSec = getEl('bulkResultSection');
+            if (bulkResSec) bulkResSec.classList.remove('hidden');
         }
 
         function exportToExcel() {
-            if (globalBulkData.length === 0) return;
-            const ws = XLSX.utils.json_to_sheet(globalBulkData);
+            if (globalBulkExportData.length === 0) return;
+            if (typeof XLSX === 'undefined') {
+                showBulkError('ไม่สามารถสร้างไฟล์ Excel ได้ กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ต');
+                return;
+            }
+            const ws = XLSX.utils.json_to_sheet(globalBulkExportData);
             const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "PayrollSummary");
-            XLSX.writeFile(wb, "payroll_calculation_result.xlsx");
+            XLSX.utils.book_append_sheet(wb, ws, "PayrollSummary2569");
+            XLSX.writeFile(wb, "payroll_calculation_result_2569.xlsx");
         }
 
-        window.onload = function() {
+        // เริ่มต้นการทำงานเมื่อโหลด DOM เรียบร้อย
+        document.addEventListener('DOMContentLoaded', function() {
             calculateSingle();
-        };
+
+            const dropZone = getEl('dropZone');
+            if (dropZone) {
+                ['dragenter', 'dragover'].forEach(evtName => {
+                    dropZone.addEventListener(evtName, (e) => {
+                        e.preventDefault();
+                        dropZone.classList.add('border-indigo-500', 'bg-indigo-100/50');
+                    });
+                });
+                ['dragleave', 'drop'].forEach(evtName => {
+                    dropZone.addEventListener(evtName, (e) => {
+                        e.preventDefault();
+                        dropZone.classList.remove('border-indigo-500', 'bg-indigo-100/50');
+                    });
+                });
+                dropZone.addEventListener('drop', (e) => {
+                    const files = e.dataTransfer ? e.dataTransfer.files : null;
+                    if (files && files.length > 0) {
+                        const input = getEl('excelFile');
+                        if (input) {
+                            input.files = files;
+                            handleFile({ target: input });
+                        }
+                    }
+                });
+            }
+        });
     </script>
 </body>
 </html>
