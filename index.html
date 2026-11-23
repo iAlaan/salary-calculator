@@ -107,6 +107,10 @@
                     <button type="button" onclick="applyDemoPreset('ot_overload')" class="px-3 py-2 rounded-xl text-xs font-medium bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 transition">
                         ทดสอบ OT เกินกฎหมาย
                     </button>
+                    <button type="button" onclick="resetCalculator()" class="px-3 py-2 rounded-xl text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-300 transition flex items-center space-x-1.5">
+                        <i class="fa-solid fa-rotate-left"></i>
+                        <span>รีเซ็ตค่าเริ่มต้น (Reset)</span>
+                    </button>
                 </div>
             </div>
 
@@ -1780,9 +1784,29 @@
                 if (getEl('enableTax')) getEl('enableTax').checked = true;
                 addDynamicRow('other', 'ค่าเดินทาง', 0);
                 addDynamicRow('deduction', 'หักอื่นๆ', 0);
+            } else if (preset === 'reset_default') {
+                if (getEl('empName')) getEl('empName').value = '';
+                if (getEl('empType')) getEl('empType').value = 'monthly';
+                toggleEmpType(false);
+                if (getEl('monthlySalary')) getEl('monthlySalary').value = 15000;
+                if (getEl('dailyRate')) getEl('dailyRate').value = 500;
+                if (getEl('workDays')) getEl('workDays').value = 30;
+                if (getEl('ot15')) getEl('ot15').value = 0;
+                if (getEl('ot20')) getEl('ot20').value = 0;
+                if (getEl('ot30')) getEl('ot30').value = 0;
+                if (getEl('ssoType')) getEl('ssoType').value = '33';
+                if (getEl('enableTax')) getEl('enableTax').checked = true;
+                addDynamicRow('other', 'เบี้ยขยัน', 0);
+                addDynamicRow('deduction', 'หักอื่นๆ', 0);
             }
 
             calculateSingle();
+        }
+
+        // รีเซ็ตข้อมูลทั้งหมดกลับสู่ค่าเริ่มต้นมาตรฐานในคลิกเดียว
+        function resetCalculator() {
+            applyDemoPreset('reset_default');
+            switchDedCategory('family');
         }
 
         // เปิดหน้าต่างใบสลิปเงินเดือน (Payslip View)
