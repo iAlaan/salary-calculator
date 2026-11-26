@@ -2,7 +2,7 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>ระบบคำนวณเงินเดือนและค่าล่วงเวลาพนักงาน (Payroll & OT Calculator 2569)</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -28,6 +28,17 @@
         .ded-cat-panel.active {
             display: block;
         }
+        /* ป้องกัน iOS Safari ซูมหน้าจออัตโนมัติเมื่อแตะช่องกรอกข้อมูลบนมือถือ */
+        @media (max-width: 639px) {
+            input[type="text"],
+            input[type="number"],
+            select {
+                font-size: 16px !important;
+            }
+        }
+        .pb-safe {
+            padding-bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px));
+        }
         @media print {
             body * {
                 visibility: hidden;
@@ -49,7 +60,7 @@
         }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col justify-between">
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col justify-between pb-24 lg:pb-0">
 
     <!-- ส่วนหัวของเว็บไซต์ -->
     <header class="bg-gradient-to-r from-indigo-600 to-blue-700 text-white shadow-lg">
@@ -236,6 +247,53 @@
                                     <div class="relative">
                                         <input type="number" id="colaAmount" value="0" min="0" step="any" placeholder="0.00" class="w-28 sm:w-32 pl-3 pr-8 py-1.5 rounded-xl border border-violet-300 bg-white focus:ring-2 focus:ring-violet-500 outline-none text-sm font-bold text-right text-rose-700" oninput="onColaAmountManualInput()">
                                         <span class="absolute right-2.5 top-1/2 -translate-y-1/2 text-[11px] text-slate-400 font-medium">฿</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- อายุงาน & ประมาณการเงินชดเชยตามกฎหมาย (พ.ร.บ. คุ้มครองแรงงาน มาตรา 118) แบบพับ/กางได้ -->
+                        <div class="bg-sky-50/70 rounded-xl border-2 border-sky-200/90 overflow-hidden shadow-xs">
+                            <button type="button" onclick="toggleTenurePanel()" class="w-full px-3.5 py-2.5 flex justify-between items-center text-left hover:bg-sky-100/50 transition">
+                                <div class="flex items-center space-x-2">
+                                    <span class="w-6 h-6 rounded-lg bg-sky-600 text-white flex items-center justify-center text-[11px] shrink-0">
+                                        <i class="fa-solid fa-award"></i>
+                                    </span>
+                                    <div>
+                                        <span class="text-xs font-bold text-sky-950 block">อายุงาน & เงินชดเชยตามกฎหมาย (มาตรา 118)</span>
+                                        <span id="tenureMiniPreview" class="text-[11px] text-sky-700 font-medium">อายุงาน 1 ปี 0 เดือน 0 วัน → สิทธิ์ชดเชย 90 วัน (75,000.00 บาท)</span>
+                                    </div>
+                                </div>
+                                <span class="text-[11px] font-semibold text-sky-700 flex items-center space-x-1 shrink-0">
+                                    <span id="tenureToggleText">แสดงรายละเอียด</span>
+                                    <i id="tenureToggleIcon" class="fa-solid fa-chevron-down text-[10px] transition-transform"></i>
+                                </span>
+                            </button>
+
+                            <div id="tenurePanelBody" class="hidden border-t border-sky-200/80 p-3.5 bg-white/80 space-y-3 text-xs">
+                                <div class="grid grid-cols-3 gap-2.5">
+                                    <div>
+                                        <label for="tenureYears" class="block text-[11px] font-semibold text-slate-600 mb-1">อายุงาน (ปี)</label>
+                                        <input type="number" id="tenureYears" value="1" min="0" max="50" step="1" class="w-full px-3 py-1.5 rounded-xl border border-sky-300 bg-white focus:ring-2 focus:ring-sky-500 outline-none font-bold text-slate-800 text-right" oninput="calculateSingle()">
+                                    </div>
+                                    <div>
+                                        <label for="tenureMonths" class="block text-[11px] font-semibold text-slate-600 mb-1">เดือน</label>
+                                        <input type="number" id="tenureMonths" value="0" min="0" max="11" step="1" class="w-full px-3 py-1.5 rounded-xl border border-sky-300 bg-white focus:ring-2 focus:ring-sky-500 outline-none font-bold text-slate-800 text-right" oninput="calculateSingle()">
+                                    </div>
+                                    <div>
+                                        <label for="tenureDays" class="block text-[11px] font-semibold text-slate-600 mb-1">วัน</label>
+                                        <input type="number" id="tenureDays" value="0" min="0" max="30" step="1" class="w-full px-3 py-1.5 rounded-xl border border-sky-300 bg-white focus:ring-2 focus:ring-sky-500 outline-none font-bold text-slate-800 text-right" oninput="calculateSingle()">
+                                    </div>
+                                </div>
+
+                                <div class="bg-sky-50 p-3 rounded-xl border border-sky-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                    <div class="space-y-0.5">
+                                        <div id="severanceTierLabel" class="font-bold text-sky-950">อายุงาน 1 ปี แต่ไม่ครบ 3 ปี (ชดเชย 90 วัน)</div>
+                                        <div class="text-[11px] text-slate-500">คำนวณจากค่าจ้างอัตราสุดท้าย (อ้างอิง พ.ร.บ. คุ้มครองแรงงาน มาตรา 118 — ไม่นำไปบวกในงวดเงินเดือนปกติ)</div>
+                                    </div>
+                                    <div class="text-left sm:text-right shrink-0">
+                                        <span class="text-[10px] text-slate-500 block">เงินชดเชยตามกฎหมาย</span>
+                                        <span id="severanceAmountVal" class="text-base font-extrabold text-sky-700">75,000.00 บาท</span>
                                     </div>
                                 </div>
                             </div>
@@ -959,65 +1017,66 @@
     </main>
 
     <!-- หน้าต่าง Modal สลิปเงินเดือนพร้อมพิมพ์ -->
-    <div id="payslipModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4 z-50" onclick="if(event.target === this) closePayslipModal()">
-        <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full overflow-hidden border border-slate-200">
-            <div class="bg-indigo-700 text-white px-6 py-4 flex justify-between items-center no-print">
+    <div id="payslipModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-2 sm:p-4 z-50 overflow-y-auto" onclick="if(event.target === this) closePayslipModal()">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[92vh] flex flex-col overflow-hidden border border-slate-200 my-auto">
+            <div class="bg-indigo-700 text-white px-4 sm:px-6 py-3.5 sm:py-4 flex justify-between items-center shrink-0 no-print">
                 <div class="flex items-center space-x-2">
                     <i class="fa-solid fa-file-invoice-dollar text-amber-300"></i>
-                    <span class="font-bold text-sm">ใบแจ้งเงินเดือนอิเล็กทรอนิกส์ (Electronic Payslip)</span>
+                    <span class="font-bold text-xs sm:text-sm">ใบแจ้งเงินเดือนอิเล็กทรอนิกส์ (Electronic Payslip)</span>
                 </div>
-                <button type="button" onclick="closePayslipModal()" aria-label="ปิดหน้าต่าง" class="text-white/80 hover:text-white text-lg">
+                <button type="button" onclick="closePayslipModal()" aria-label="ปิดหน้าต่าง" class="w-8 h-8 rounded-lg flex items-center justify-center text-white/80 hover:text-white hover:bg-white/10 text-lg">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
             </div>
 
-            <div id="payslipPrintArea" class="p-6 space-y-5 text-sm text-slate-800">
-                <div class="flex justify-between items-start border-b border-slate-200 pb-4">
+            <div id="payslipPrintArea" class="p-4 sm:p-6 space-y-5 text-sm text-slate-800 overflow-y-auto">
+                <div class="flex flex-col sm:flex-row justify-between items-start border-b border-slate-200 pb-4 gap-2">
                     <div>
-                        <h4 class="text-lg font-bold text-indigo-800">ใบแจ้งเงินเดือน / PAYSLIP</h4>
+                        <h4 class="text-base sm:text-lg font-bold text-indigo-800">ใบแจ้งเงินเดือน / PAYSLIP</h4>
                         <p class="text-xs text-slate-500">ประจำงวดการจ่ายเงินเดือน พ.ศ. 2569</p>
                     </div>
-                    <div class="text-right text-xs space-y-0.5">
+                    <div class="sm:text-right text-xs space-y-0.5">
                         <div class="font-bold text-slate-800 text-sm" id="slipEmpName">-</div>
                         <div class="text-slate-500" id="slipEmpType">-</div>
                         <div class="text-slate-500" id="slipWorkDays">-</div>
                     </div>
                 </div>
-
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div class="border border-slate-200 rounded-2xl p-4 space-y-2">
-                        <div class="font-bold text-emerald-700 border-b border-slate-100 pb-1.5 text-xs uppercase">รายการเงินได้ (Earnings)</div>
-                        <div id="slipEarningsList" class="space-y-1.5 text-xs"></div>
-                        <div class="border-t border-slate-200 pt-2 flex justify-between font-bold text-emerald-700">
-                            <span>รวมเงินได้ทั้งหมด</span>
-                            <span id="slipTotalEarnings">0.00 บาท</span>
-                        </div>
-                    </div>
-
-                    <div class="border border-slate-200 rounded-2xl p-4 space-y-2">
-                        <div class="font-bold text-rose-700 border-b border-slate-100 pb-1.5 text-xs uppercase">รายการหัก (Deductions)</div>
-                        <div id="slipDeductionsList" class="space-y-1.5 text-xs"></div>
-                        <div class="border-t border-slate-200 pt-2 flex justify-between font-bold text-rose-700">
-                            <span>รวมรายการหักทั้งหมด</span>
-                            <span id="slipTotalDeductions">0.00 บาท</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="bg-indigo-50 border border-indigo-200 rounded-2xl p-4 flex justify-between items-center">
+                <div class="bg-indigo-50 border border-indigo-200 rounded-2xl p-4 flex flex-col sm:flex-row justify-between sm:items-center gap-2">
                     <div>
                         <div class="text-xs text-indigo-700 font-bold">เงินได้สุทธิ (NET PAY)</div>
                         <div class="text-[11px] text-slate-500" id="slipTaxNote">สิทธิ์ลดหย่อนภาษีรวม 60,000 บาท/ปี</div>
                     </div>
-                    <div class="text-2xl font-extrabold text-indigo-800" id="slipNetPay">0.00 บาท</div>
+                    <div class="text-xl sm:text-2xl font-extrabold text-indigo-800" id="slipNetPay">0.00 บาท</div>
                 </div>
             </div>
 
-            <div class="bg-slate-50 px-6 py-3.5 border-t border-slate-200 flex justify-end space-x-3 no-print">
-                <button type="button" onclick="closePayslipModal()" class="px-4 py-2 rounded-xl text-xs font-medium bg-slate-200 hover:bg-slate-300 text-slate-700 transition">ปิดหน้าต่าง</button>
-                <button type="button" onclick="window.print()" class="px-4 py-2 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm transition flex items-center space-x-1.5">
+            <div class="bg-slate-50 px-4 sm:px-6 py-3.5 border-t border-slate-200 flex justify-end space-x-3 shrink-0 no-print">
+                <button type="button" onclick="closePayslipModal()" class="px-4 py-2.5 rounded-xl text-xs font-medium bg-slate-200 hover:bg-slate-300 text-slate-700 transition">ปิดหน้าต่าง</button>
+                <button type="button" onclick="window.print()" class="px-4 py-2.5 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm transition flex items-center space-x-1.5">
                     <i class="fa-solid fa-print"></i>
                     <span>พิมพ์ / บันทึก PDF</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- แถบสรุปยอดสุทธิแบบลอยติดขอบล่างเฉพาะบนมือถือ (Phone Sticky Bar) -->
+    <div id="mobileStickySummaryBar" class="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-slate-900/95 backdrop-blur-md text-white border-t border-indigo-800/70 px-4 pt-2.5 pb-safe shadow-2xl no-print">
+        <div class="max-w-7xl mx-auto flex items-center justify-between gap-3">
+            <div class="min-w-0">
+                <span class="text-[10px] text-indigo-300 block leading-tight">ยอดเงินสุทธิ (Net Pay)</span>
+                <div class="flex items-baseline space-x-1 truncate">
+                    <span id="mobileBarNetPay" class="text-lg font-extrabold text-emerald-400 truncate">26,562.50</span>
+                    <span class="text-[11px] text-slate-300">บาท</span>
+                </div>
+            </div>
+            <div class="flex items-center space-x-2 shrink-0">
+                <button type="button" onclick="scrollToSummaryCard()" class="px-3 py-2 rounded-xl text-xs font-semibold bg-indigo-800/80 hover:bg-indigo-700 text-indigo-100 border border-indigo-600/50 transition">
+                    สรุปยอด
+                </button>
+                <button type="button" onclick="openPayslipModalFromSingle()" class="px-3.5 py-2 rounded-xl text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white shadow-sm transition flex items-center space-x-1.5">
+                    <i class="fa-solid fa-file-invoice-dollar"></i>
+                    <span>สลิป</span>
                 </button>
             </div>
         </div>
@@ -1069,9 +1128,18 @@
             if (tab === 'single') {
                 getEl('tab-single')?.classList.add('active');
                 if (btnSingle) btnSingle.className = activeCls;
+                getEl('mobileStickySummaryBar')?.classList.remove('hidden');
             } else {
                 getEl('tab-bulk')?.classList.add('active');
                 if (btnBulk) btnBulk.className = activeCls;
+                getEl('mobileStickySummaryBar')?.classList.add('hidden');
+            }
+        }
+
+        function scrollToSummaryCard() {
+            const target = getEl('resNetPay');
+            if (target) {
+                target.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }
         }
 
@@ -1698,14 +1766,8 @@
                 });
 
                 // อายุงาน & เงินชดเชยตามกฎหมาย (มาตรา 118)
-                const tYears = parseInt(getEl('tenureYears')?.value) || 0;
-                const tMonths = parseInt(getEl('tenureMonths')?.value) || 0;
-                const tDays = parseInt(getEl('tenureDays')?.value) || 0;
                 const monthlyEquiv = type === 'monthly' ? baseRateVal : baseRateVal * 30;
-                const sevInfo = calculateSeverancePay(tYears, tMonths, tDays, monthlyEquiv);
-                setText('severanceTierLabel', sevInfo.tierLabel);
-                setText('severanceAmountVal', `${fmt(sevInfo.amount)} บาท`);
-                setText('tenureMiniPreview', `อายุงาน ${tYears} ปี ${tMonths} เดือน ${tDays} วัน → สิทธิ์ชดเชย ${sevInfo.compDays} วัน (${fmt(sevInfo.amount)} บาท)`);
+                updateInlineSeveranceSection(monthlyEquiv);
 
                 // คำนวณลดหย่อนและภาษี 2569
                 const otBasePreview = type === 'monthly' ? baseRateVal : baseRateVal * 30;
@@ -1811,6 +1873,7 @@
                 setText('resGrossIncome', fmt(res.monthlyGrossIncome) + ' บาท');
                 setText('resDeduction', fmt(res.totalDeductions) + ' บาท');
                 setText('resNetPay', fmt(res.netPay));
+                setText('mobileBarNetPay', fmt(res.netPay));
 
                 latestSingleState = {
                     name,
@@ -2201,34 +2264,43 @@
             XLSX.writeFile(wb, "payroll_calculation_result_2569.xlsx");
         }
 
+        function toggleSevLawTable() {
+            const wrap = getEl('sevLawTableWrap');
+            const txt = getEl('sevTableToggleText');
+            const icon = getEl('sevTableToggleIcon');
+            if (!wrap) return;
+            if (wrap.classList.contains('hidden')) {
+                wrap.classList.remove('hidden');
+                if (txt) txt.innerText = 'ซ่อนตารางเกณฑ์';
+                if (icon) icon.style.transform = 'rotate(180deg)';
+            } else {
+                wrap.classList.add('hidden');
+                if (txt) txt.innerText = 'ดูตารางเกณฑ์ 6 ขั้น';
+                if (icon) icon.style.transform = 'rotate(0deg)';
+            }
+        }
+
+        function setPresetSeverance(y, m, d) {
+            if (getEl('sevYears')) getEl('sevYears').value = y;
+            if (getEl('sevMonths')) getEl('sevMonths').value = m;
+            if (getEl('sevDays')) getEl('sevDays').value = d;
+            calculateSingle();
+        }
+
+        function updateInlineSeveranceSection(monthlyEquiv) {
+            const y = Math.max(0, Math.floor(parseFloat(getEl('tenureYears')?.value) || 0));
+            const m = Math.max(0, Math.floor(parseFloat(getEl('tenureMonths')?.value) || 0));
+            const d = Math.max(0, Math.floor(parseFloat(getEl('tenureDays')?.value) || 0));
+
+            const sev = calculateSeverancePay(y, m, d, monthlyEquiv);
+            setText('tenureMiniPreview', `อายุงาน ${y} ปี ${m} เดือน ${d} วัน → สิทธิ์ชดเชย ${sev.compDays} วัน (${fmt(sev.amount)} บาท)`);
+            setText('severanceTierLabel', sev.tierLabel);
+            setText('severanceAmountVal', `${fmt(sev.amount)} บาท`);
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
             calculateSingle();
-
-            const dropZone = getEl('dropZone');
-            if (dropZone) {
-                ['dragenter', 'dragover'].forEach(evtName => {
-                    dropZone.addEventListener(evtName, (e) => {
-                        e.preventDefault();
-                        dropZone.classList.add('border-indigo-500', 'bg-indigo-100/50');
-                    });
-                });
-                ['dragleave', 'drop'].forEach(evtName => {
-                    dropZone.addEventListener(evtName, (e) => {
-                        e.preventDefault();
-                        dropZone.classList.remove('border-indigo-500', 'bg-indigo-100/50');
-                    });
-                });
-                dropZone.addEventListener('drop', (e) => {
-                    const files = e.dataTransfer ? e.dataTransfer.files : null;
-                    if (files && files.length > 0) {
-                        const input = getEl('excelFile');
-                        if (input) {
-                            input.files = files;
-                            handleFile({ target: input });
-                        }
-                    }
-                });
-            }
+            if (typeof calculateSeveranceTab === 'function') calculateSeveranceTab();
         });
     </script>
 </body>
