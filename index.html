@@ -383,7 +383,7 @@
                                         <option value="custom|0">Other / อื่นๆ (ระบุตำแหน่งและยอดเงินเอง)</option>
                                     </select>
 
-                                    <div id="customPositionFields" class="hidden grid grid-cols-1 sm:grid-cols-12 gap-2 pt-1">
+                                    <div id="customPositionFields" style="display: none;" class="grid grid-cols-1 sm:grid-cols-12 gap-2 pt-1">
                                         <input type="text" id="customPositionTitle" placeholder="ชื่อตำแหน่ง (TH/EN)" class="sm:col-span-7 px-2.5 py-1.5 rounded-lg border border-emerald-300 bg-white text-xs outline-none" oninput="calculateSingle()">
                                         <input type="number" id="customPositionAllowance" value="0" min="0" step="any" placeholder="บาท" class="sm:col-span-5 px-2.5 py-1.5 rounded-lg border border-emerald-300 bg-white text-xs font-semibold text-right outline-none" oninput="calculateSingle()">
                                     </div>
@@ -1197,34 +1197,34 @@
                 inp.value = 0;
             }
         }
-        function getCurrentBasePayPreview() {
-            const type = getEl('empType')?.value || 'monthly';
-            const baseRate = type === 'monthly'
-                ? (parseFloat(getEl('monthlySalary')?.value) || 0)
-                : (parseFloat(getEl('dailyRate')?.value) || 0);
-            const workDays = parseFloat(getEl('workDays')?.value) || 0;
-            return type === 'monthly' ? (baseRate / 30) * workDays : baseRate * workDays;
+
+        function syncChkFromInput(chkId, inputId) {
+            const chk = getEl(chkId);
+            const inp = getEl(inputId);
+            if (!chk || !inp) return;
+            chk.checked = (parseFloat(inp.value) || 0) > 0;
         }
 
-        function selectColaPercent(pct) {
-            colaActivePct = pct;
-            updateColaChipsUI();
-            const customPctWrap = getEl('colaCustomPctWrap');
-            const customPctInp = getEl('colaCustomPctInput');
-            const colaInp = getEl('colaAmount');
-            const basePay = getCurrentBasePayPreview();
+        function addDynamicRow(kind, defaultTitle = '', defaultVal = 0) {
+            const isOther = kind === 'other';
+            const container = getEl(isOther ? 'otherIncomeContainer' : 'deductionContainer');
+            if (!container) return;
 
-            if (pct === 'custom') {
-                customPctWrap?.classList.remove('hidden');
-                const currentAmt = Math.max(0, parseFloat(colaInp?.value) || 0);
-                if (customPctInp) {
-                    customPctInp.value = basePay > 0 ? Math.round((currentAmt / basePay) * 10000) / 100 : 0;
-                }
-            } else {
-                customPctWrap?.classList.add('hidden');
-                const calcAmt = Math.round((basePay * (Number(pct) / 100)) * 100) / 100;
-                if (colaInp) colaInp.value = calcAmt;
-            }
+            const row = document.createElement('div');
+            row.className = `flex gap-2 ${isOther ? 'dynamic-row-other' : 'dynamic-row-deduction'}`;
+            row.innerHTML = `
+                <input type="text" placeholder="${isOther ? 'ชื่อรายการ' : 'ชื่อรายการหักอื่นๆ'}" class="w-2/3 px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none text-sm" value="${defaultTitle}" oninput="calculateSingle()">
+                <input type="number" placeholder="จำนวนเงิน" value="${defaultVal}" min="0" step="any" class="w-1/4 px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none text-sm" oninput="calculateSingle()">
+                <button type="button" onclick="this.parentElement.remove(); calculateSingle();" aria-label="ลบรายการ" class="w-1/12 text-rose-500 hover:text-rose-700 flex items-center justify-center"><i class="fa-solid fa-trash-can text-xs"></i></button>
+            `;
+            container.appendChild(row);
+            calculateSingle();
+        }
+
+        function onStdHoursChange() {
+            const stdVal = parseFloat(getEl('stdWorkHours')?.value) || 8;
+            const actualInp = getEl('actualDailyHours');
+            if (actualInp) actualInp.value = stdVal;
             calculateSingle();
         }
 
@@ -1257,9 +1257,11 @@
             const sel = getEl('positionSelect');
             const customBox = getEl('customPositionFields');
             if (!sel || !customBox) return;
-            if (sel.value === 'custom') {
+            if (sel.value.startsWith('custom')) {
+                customBox.style.display = 'grid';
                 customBox.classList.remove('hidden');
             } else {
+                customBox.style.display = 'none';
                 customBox.classList.add('hidden');
             }
             calculateSingle();
@@ -1268,7 +1270,7 @@
         function getPositionAllowanceInfo() {
             const sel = getEl('positionSelect');
             if (!sel) return { title: 'Staff / พนักงานทั่วไป', amount: 0 };
-            if (sel.value === 'custom') {
+            if (sel.value.startsWith('custom')) {
                 const title = getEl('customPositionTitle')?.value.trim() || 'Other / อื่นๆ';
                 const amt = Math.max(0, parseFloat(getEl('customPositionAllowance')?.value) || 0);
                 return { title, amount: amt };
@@ -1913,7 +1915,10 @@
             if (getEl('otherIncomeContainer')) getEl('otherIncomeContainer').innerHTML = '';
             if (getEl('deductionContainer')) getEl('deductionContainer').innerHTML = '';
             if (getEl('positionSelect')) getEl('positionSelect').value = 'Staff / พนักงานทั่วไป|0';
-            getEl('customPositionFields')?.classList.add('hidden');
+            if (getEl('customPositionFields')) {
+                getEl('customPositionFields').style.display = 'none';
+                getEl('customPositionFields').classList.add('hidden');
+            }
             if (getEl('stdWorkHours')) getEl('stdWorkHours').value = '8';
             if (getEl('actualDailyHours')) getEl('actualDailyHours').value = '8';
             if (getEl('colaAmount')) getEl('colaAmount').value = '0';
@@ -2304,4 +2309,4 @@
         });
     </script>
 </body>
-</html>
+                                        </html>
