@@ -1339,44 +1339,6 @@
             calculateSingle();
         }
 
-        function onPositionSelectChange() {
-            const sel = getEl('positionSelect');
-            const customBox = getEl('customPositionFields');
-            if (!sel || !customBox) return;
-            if (sel.value === 'custom') {
-                customBox.classList.remove('hidden');
-            } else {
-                customBox.classList.add('hidden');
-            }
-            calculateSingle();
-        }
-
-        function getPositionAllowanceInfo() {
-            const sel = getEl('positionSelect');
-            if (!sel) return { title: 'Staff / พนักงานทั่วไป', amount: 0 };
-            if (sel.value === 'custom') {
-                const title = getEl('customPositionTitle')?.value.trim() || 'Other / อื่นๆ';
-                const amt = Math.max(0, parseFloat(getEl('customPositionAllowance')?.value) || 0);
-                return { title, amount: amt };
-            }
-            const parts = sel.value.split('|');
-            return {
-                title: parts[0] || 'Staff / พนักงานทั่วไป',
-                amount: Math.max(0, parseFloat(parts[1]) || 0)
-            };
-        }
-
-        function updateColaChipsUI() {
-            document.querySelectorAll('.cola-pct-btn').forEach(btn => {
-                const p = btn.getAttribute('data-pct');
-                if (String(colaActivePct) === String(p)) {
-                    btn.className = 'cola-pct-btn px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-violet-600 text-white transition';
-                } else {
-                    btn.className = 'cola-pct-btn px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-white text-violet-800 border border-violet-200 hover:bg-violet-100 transition';
-                }
-            });
-        }
-
         function calculateSeverancePay(years, months, days, monthlyBaseEquivalent) {
             const totalDays = (Math.max(0, years) * 365) + (Math.max(0, months) * 30) + Math.max(0, days);
             let compDays = 0;
@@ -2309,4 +2271,4 @@
         });
     </script>
 </body>
-                                        </html>
+</html>
